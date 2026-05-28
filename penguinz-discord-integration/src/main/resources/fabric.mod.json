@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "penguinz-discord-integration",
+  "version": "${version}",
+  "name": "Penguinz Discord Integration",
+  "description": "A server-side Fabric Minecraft to Discord bridge with rich embeds, webhooks, smart pings, slash commands, channel status, and VoiceMessages support.",
+  "authors": ["Penguinz"],
+  "contact": {},
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      "dev.penguinzdiscordintegration.PenguinzDiscordIntegrationMod"
+    ]
+  },
+  "mixins": [
+    "penguinz-discord-integration.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "fabric-api": "*",
+    "minecraft": ">=1.21 <1.22",
+    "java": ">=21"
+  },
+  "suggests": {
+    "voicemessages": "*"
+  }
+}
+
