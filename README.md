@@ -1,4 +1,4 @@
-# Sentiment Polarity AI Detection
+# Multi-Signal-AI-Detector-Reliability-Analysis
 
 ## Overview
 
