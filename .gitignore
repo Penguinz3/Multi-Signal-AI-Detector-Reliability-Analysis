@@ -25,3 +25,10 @@ outputs/positive_detections.csv
 .ipynb_checkpoints/
 .pytest_cache/
 
+# FPRINT runtime data, model caches, and local source archives.
+FPRINT-storage/
+data/normalized/
+data/raid_human.csv
+data/bawe.csv
+*.provenance.json
+
