@@ -33,6 +33,7 @@ class ForecastEvaluationRow:
     model: str
     prediction: float
     observed_fpr: float
+    operating_fpr: float = .05
 
 
 @dataclass(frozen=True)
@@ -64,6 +65,7 @@ def evaluate_success_gate(
     detector_id_model: str = "detector_id_x_text",
     simple_baselines: Sequence[str] = SIMPLE_BASELINES,
     alpha: float = .05,
+    operating_fpr: float = .05,
 ) -> SuccessGateResult:
     """Evaluate the preregistered eight-corpus, four-backend success gate."""
     if len(required_dependency_groups) != 4:
@@ -72,6 +74,10 @@ def evaluate_success_gate(
         raise ValueError("signature_draws must be positive")
     if not 0.0 < alpha < 1.0:
         raise ValueError("alpha must be in (0, 1)")
+    rows = [
+        row for row in rows
+        if math.isclose(row.operating_fpr, operating_fpr, rel_tol=0.0, abs_tol=1e-12)
+    ]
     if not rows:
         raise ValueError("No forecast-evaluation rows")
 

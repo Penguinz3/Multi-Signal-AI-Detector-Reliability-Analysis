@@ -147,11 +147,15 @@ def build_forecast_manifest(
     selected_c: Mapping[str, float],
     feature_artifacts: Mapping[str, str],
     profile_artifacts: Mapping[str, str],
+    id_artifacts: Mapping[str, str],
+    forecast_artifacts: Mapping[str, str],
     code_commit: str,
 ) -> dict:
     _validate_threshold_artifact(thresholds, panel_revisions)
     _validate_artifact_hashes("feature", feature_artifacts)
     _validate_artifact_hashes("profile", profile_artifacts)
+    _validate_artifact_hashes("ID", id_artifacts)
+    _validate_artifact_hashes("forecast", forecast_artifacts)
     if not GIT_REVISION.fullmatch(code_commit):
         raise ValueError("code_commit must be a hexadecimal Git revision")
     if not selected_c or not all(math.isfinite(float(value)) and float(value) > 0 for value in selected_c.values()):
@@ -192,7 +196,10 @@ def build_forecast_manifest(
         "selected_c": {name: float(value) for name, value in sorted(selected_c.items())},
         "feature_artifacts": dict(sorted(feature_artifacts.items())),
         "profile_artifacts": dict(sorted(profile_artifacts.items())),
+        "id_artifacts": dict(sorted(id_artifacts.items())),
+        "forecast_artifacts": dict(sorted(forecast_artifacts.items())),
         "code_commit": code_commit,
+        "builder_schema_version": 1,
     }
 
 
@@ -365,8 +372,18 @@ def _validate_threshold_artifact(
 
 
 def _validate_artifact_hashes(name: str, artifacts: Mapping[str, str]) -> None:
-    if not artifacts or any(not HEX64.fullmatch(str(value)) for value in artifacts.values()):
+    if not artifacts or any(not Path(path).is_absolute() for path in artifacts) or any(
+        not HEX64.fullmatch(str(value)) for value in artifacts.values()
+    ):
         raise ValueError(f"{name} artifacts require SHA-256 hashes")
+
+
+def _validate_artifact_files(name: str, artifacts: Mapping[str, str]) -> None:
+    _validate_artifact_hashes(name, artifacts)
+    for path, expected in artifacts.items():
+        artifact = Path(path)
+        if not artifact.is_file() or _file_sha256(artifact) != expected:
+            raise RuntimeError(f"{name} artifact hash mismatch: {artifact}")
 
 
 def _validate_manifest_for_fold(
@@ -377,6 +394,8 @@ def _validate_manifest_for_fold(
 ) -> None:
     if manifest.get("target_corpus") != paths.target_corpus:
         raise ValueError("Forecast manifest target does not match fold")
+    if manifest.get("builder_schema_version") != 1:
+        raise ValueError("Forecast manifest was not produced by the zero-score builder")
     database = manifest.get("database")
     if not isinstance(database, Mapping) or database.get("path") != str(paths.database.resolve()):
         raise ValueError("Forecast manifest database does not match fold")
@@ -399,12 +418,16 @@ def _validate_manifest_for_fold(
         raise ValueError("Panel revision hash mismatch")
     if manifest["thresholds_sha256"] != _digest(thresholds):
         raise ValueError("Threshold artifact hash mismatch")
-    feature_artifacts = manifest.get("feature_artifacts")
-    profile_artifacts = manifest.get("profile_artifacts")
-    if not isinstance(feature_artifacts, Mapping) or not isinstance(profile_artifacts, Mapping):
-        raise ValueError("Forecast manifest lacks feature/profile artifacts")
-    _validate_artifact_hashes("feature", feature_artifacts)
-    _validate_artifact_hashes("profile", profile_artifacts)
+    for key, label in (
+        ("feature_artifacts", "feature"),
+        ("profile_artifacts", "profile"),
+        ("id_artifacts", "ID"),
+        ("forecast_artifacts", "forecast"),
+    ):
+        artifacts = manifest.get(key)
+        if not isinstance(artifacts, Mapping):
+            raise ValueError(f"Forecast manifest lacks {label} artifacts")
+        _validate_artifact_files(label, artifacts)
     selected_c = manifest.get("selected_c")
     if not isinstance(selected_c, Mapping) or not selected_c:
         raise ValueError("Forecast manifest lacks selected C values")

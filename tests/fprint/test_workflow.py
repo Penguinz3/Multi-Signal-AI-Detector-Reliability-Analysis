@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 import tempfile
 import unittest
@@ -45,6 +46,16 @@ def calibration() -> dict:
 
 
 def manifest(paths, suffix: str = "a") -> dict:
+    artifacts = {}
+    for name, content in (
+        (f"features-{suffix}.json", suffix),
+        (f"profiles-{suffix}.json", "profile"),
+        (f"ids-{suffix}.json", "ids"),
+        (f"forecasts-{suffix}.json", "forecasts"),
+    ):
+        path = (paths.root / name).resolve()
+        path.write_text(content, encoding="utf-8")
+        artifacts[name] = {str(path): hashlib.sha256(content.encode()).hexdigest()}
     return build_forecast_manifest(
         paths=paths,
         data_ids={"source": ["s1"], "target": ["t1"]},
@@ -57,8 +68,10 @@ def manifest(paths, suffix: str = "a") -> dict:
         },
         thresholds=calibration(),
         selected_c={"main": 0.1},
-        feature_artifacts={"features": suffix * 64},
-        profile_artifacts={"profiles": "b" * 64},
+        feature_artifacts=artifacts[f"features-{suffix}.json"],
+        profile_artifacts=artifacts[f"profiles-{suffix}.json"],
+        id_artifacts=artifacts[f"ids-{suffix}.json"],
+        forecast_artifacts=artifacts[f"forecasts-{suffix}.json"],
         code_commit="c" * 40,
     )
 
@@ -106,6 +119,8 @@ class WorkflowTests(unittest.TestCase):
                 selected_c=first["selected_c"],
                 feature_artifacts=first["feature_artifacts"],
                 profile_artifacts=first["profile_artifacts"],
+                id_artifacts=first["id_artifacts"],
+                forecast_artifacts=first["forecast_artifacts"],
                 code_commit=first["code_commit"],
             )
             self.assertNotEqual(first["data_ids_sha256"], changed["data_ids_sha256"])
@@ -135,6 +150,16 @@ class WorkflowTests(unittest.TestCase):
                 mark_test_scored(root, targets, "a")
             lock_privileged_forecasts(paths["b"], manifest(paths["b"]), {})
             mark_test_scored(root, targets, "a")
+
+    def test_zero_lock_rejects_tampered_builder_artifact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = initialize_fold(Path(directory), "target")
+            make_database(paths.database)
+            built = manifest(paths)
+            feature_path = Path(next(iter(built["feature_artifacts"])))
+            feature_path.write_text("tampered", encoding="utf-8")
+            with self.assertRaises(RuntimeError):
+                lock_zero_score_forecasts(paths, built, {}, ("source",))
 
 
 if __name__ == "__main__":

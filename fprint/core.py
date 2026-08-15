@@ -538,6 +538,7 @@ def validate_forecast_payload(
     sizes: Sequence[int] = (50, 100, 250),
     draws: int = 20,
     models: Sequence[str] = FORECAST_MODELS,
+    operating_fprs: Sequence[float] = (0.05, 0.01),
 ) -> None:
     if detectors is None:
         from .detectors import SPECS
@@ -551,9 +552,10 @@ def validate_forecast_payload(
         if len(detectors) < 4 or groups != {"openai_roberta", "radar", "mage", "qwen25_shared"}:
             raise ValueError("Admitted panel requires >=4 configurations across all four dependency groups")
     expected = {
-        (corpus, detector, size, draw, model)
+        (corpus, detector, operating_fpr, size, draw, model)
         for corpus in corpora for detector in detectors for size in sizes
         for draw in range(draws) for model in models
+        for operating_fpr in operating_fprs
     }
     entries = payload.get("forecasts")
     if not isinstance(entries, list):
@@ -564,7 +566,8 @@ def validate_forecast_payload(
             raise ValueError("Every forecast must be an object")
         key = (
             entry.get("target_corpus"), entry.get("detector_config"),
-            entry.get("signature_size"), entry.get("draw"), entry.get("model"),
+            entry.get("operating_fpr"), entry.get("signature_size"),
+            entry.get("draw"), entry.get("model"),
         )
         if key in actual:
             raise ValueError(f"Duplicate forecast cell: {key}")

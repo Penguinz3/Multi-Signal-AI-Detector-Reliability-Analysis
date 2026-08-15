@@ -102,14 +102,21 @@ class FprintTests(unittest.TestCase):
                         for model in ("main", "baseline"):
                             forecasts.append({
                                 "target_corpus": corpus, "detector_config": detector,
+                                "operating_fpr": .05,
                                 "signature_size": size, "draw": draw, "model": model,
                                 "prediction": .05,
                             })
         payload = {"forecasts": forecasts}
-        validate_forecast_payload(payload, ("a", "b"), ("d",), (50, 100), 2, ("main", "baseline"))
+        validate_forecast_payload(
+            payload, ("a", "b"), ("d",), (50, 100), 2,
+            ("main", "baseline"), (.05,),
+        )
         payload["forecasts"].pop()
         with self.assertRaises(ValueError):
-            validate_forecast_payload(payload, ("a", "b"), ("d",), (50, 100), 2, ("main", "baseline"))
+            validate_forecast_payload(
+                payload, ("a", "b"), ("d",), (50, 100), 2,
+                ("main", "baseline"), (.05,),
+            )
 
     def test_nested_cv_rejects_source_quantity_leakage(self):
         rows = [

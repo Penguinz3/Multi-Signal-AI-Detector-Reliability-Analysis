@@ -173,7 +173,14 @@ class SuccessGateTests(unittest.TestCase):
         return result
 
     def test_complete_success_gate(self):
-        report = evaluate_success_gate(self.rows())
+        rows = self.rows()
+        sensitivity = [
+            ForecastEvaluationRow(
+                **{**row.__dict__, "operating_fpr": .01}
+            )
+            for row in rows
+        ]
+        report = evaluate_success_gate(rows + sensitivity)
         self.assertTrue(report.passed, report.failures)
         self.assertEqual(report.wins_over_detector_id, {100: 8, 250: 8})
         self.assertEqual(len(report.corpus_improvements), 8)

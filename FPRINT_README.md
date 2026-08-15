@@ -55,9 +55,13 @@ F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint calibrate `
 F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint score-source `
   --target-corpus pmc --detector openai_roberta_base__gpt2_legacy
 
-F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint forecast `
-  --phase zero --target-corpus pmc --manifest pmc-manifest.json `
-  --forecasts pmc-zero-forecasts.json
+F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint score-source `
+  --target-corpus pmc --detector logrank__qwen2_5_0_5b_fp32 `
+  --paired-detector lastde__qwen2_5_0_5b_fp32
+
+F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint build-zero-forecasts `
+  --target-corpus pmc `
+  --threshold-artifact F:\Research\FPRINT-storage\state\frozen_thresholds.json
 
 F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint score-target `
   --target-corpus pmc --partition privileged_signature `
@@ -88,6 +92,14 @@ must exist before any privileged target score, and all nine privileged locks
 must exist before any held-out test score. The preregistered success gate remains
 the original eight-corpus Computers analysis; BAWE is reported separately as
 external educational validation.
+
+The paired source command interleaves LogRank and Lastde so their shared Qwen
+observer performs one forward pass per text. `build-zero-forecasts` writes and
+immediately locks the verified feature, profile, ID, forecast, and manifest
+artifacts; generic external JSON cannot create a zero-score lock. Each lock
+contains the 5% primary and 1% sensitivity operating points and binds all
+artifacts by SHA-256. The builder refuses uncommitted FPRINT code, existing
+target scores, non-prelock folds, and incomplete detector or probe panels.
 
 Historical Phi-2 fp16 and bf16 failures are preserved in
 `docs/protocol_amendment_phi2_bf16.md`. The replacement observer is the pinned

@@ -10,14 +10,15 @@ from statistics import median
 
 from .core import (
     PROBES, STUDY_CORPORA, TARGET_CORPORA, StudyDB, TextRecord,
-    assign_grouped_partitions, deduplicate, grouping_key, lock_forecasts,
-    make_probe_triplet, storage_root, validate_forecast_payload, verify_lock,
+    assign_grouped_partitions, deduplicate, grouping_key,
+    make_probe_triplet, storage_root,
 )
 from .detectors import SPECS, build_adapter, validate_labeled_pilot, validate_specs
 from .evaluation import ForecastEvaluationRow, evaluate_success_gate
+from .forecasting import build_zero_forecasts
 from .workflow import (
     assert_all_target_locks, assert_target_score_allowed, build_threshold_artifact,
-    fold_paths, initialize_fold, lock_privileged_forecasts, lock_zero_score_forecasts,
+    fold_paths, initialize_fold, lock_privileged_forecasts,
     mark_signature_scored, mark_test_scored,
 )
 
@@ -109,23 +110,23 @@ def forecast(args: argparse.Namespace) -> None:
     root = storage_root()
     paths = fold_paths(root, args.target_corpus)
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
-    if args.phase == "zero":
-        validate_forecast_payload(payload, corpora=(args.target_corpus,))
-        digest = lock_zero_score_forecasts(
-            paths,
-            manifest,
-            payload["forecasts"],
-            [corpus for corpus in STUDY_CORPORA if corpus != args.target_corpus],
-        )
-    else:
-        digest = lock_privileged_forecasts(paths, manifest, payload)
+    digest = lock_privileged_forecasts(paths, manifest, payload)
     print(f"Locked forecasts: {digest}")
+
+
+def build_zero(args: argparse.Namespace) -> None:
+    outputs = build_zero_forecasts(
+        storage_root(), args.target_corpus, args.threshold_artifact,
+        args.output_dir, args.admitted_detectors,
+    )
+    print("Built zero-score artifacts: " + ", ".join(f"{name}={path}" for name, path in outputs.items()))
 
 
 def _score(
     args: argparse.Namespace,
     partitions: list[str],
     *,
+    detector_ids: tuple[str, ...] | None = None,
     database: Path | None = None,
     include_corpus: str | None = None,
     include_corpora: tuple[str, ...] | None = None,
@@ -133,7 +134,11 @@ def _score(
     allowed_ids: set[str] | None = None,
 ) -> tuple[int, int]:
     db = StudyDB(database or storage_root() / "state" / "fprint.sqlite3")
-    adapter = build_adapter(args.detector, args.device, args.mage_repo)
+    detector_ids = detector_ids or (args.detector,)
+    adapters = {
+        detector: build_adapter(detector, args.device, args.mage_repo)
+        for detector in detector_ids
+    }
     completed, skipped = 0, 0
     for record_id, text in db.records(
         partitions,
@@ -143,23 +148,24 @@ def _score(
     ):
         if allowed_ids is not None and record_id not in allowed_ids:
             continue
-        if db.has_score(record_id, args.detector):
-            skipped += 1
-            continue
-        try:
-            result = adapter.score(text)
-        except Exception as error:
-            spec = SPECS[args.detector]
-            payload = {
-                "failure": f"{type(error).__name__}: {error}",
-                "native_score": None, "canonical_ai_score": None,
-                "input_token_count": adapter.token_count(text), "effective_token_count": 0,
-                "max_tokens": spec.max_tokens, "truncated": False, "runtime_ms": 0.0,
-            }
-        else:
-            payload = asdict(result)
-        db.add_score(record_id, args.detector, SPECS[args.detector].dependency_group, payload)
-        completed += 1
+        for detector, adapter in adapters.items():
+            if db.has_score(record_id, detector):
+                skipped += 1
+                continue
+            try:
+                result = adapter.score(text)
+            except Exception as error:
+                spec = SPECS[detector]
+                payload = {
+                    "failure": f"{type(error).__name__}: {error}",
+                    "native_score": None, "canonical_ai_score": None,
+                    "input_token_count": adapter.token_count(text), "effective_token_count": 0,
+                    "max_tokens": spec.max_tokens, "truncated": False, "runtime_ms": 0.0,
+                }
+            else:
+                payload = asdict(result)
+            db.add_score(record_id, detector, SPECS[detector].dependency_group, payload)
+            completed += 1
     db.close()
     print(f"Scored {completed}; resumed/skipped {skipped}.")
     return completed, skipped
@@ -169,37 +175,43 @@ def _score_probes(
     args: argparse.Namespace,
     database: Path,
     include_corpora: tuple[str, ...] | None = None,
+    detector_ids: tuple[str, ...] | None = None,
 ) -> None:
     db = StudyDB(database)
-    adapter = build_adapter(args.detector, args.device, args.mage_repo)
-    spec = SPECS[args.detector]
-    capacity = min(spec.max_tokens - 32, 460)
+    detector_ids = detector_ids or (args.detector,)
+    adapters = {
+        detector: build_adapter(detector, args.device, args.mage_repo)
+        for detector in detector_ids
+    }
     completed, rejected, skipped = 0, 0, 0
     for triplet_id, record_id, probe, original, low, high in db.probe_triplets(
         include_corpora=include_corpora,
     ):
-        counts = tuple(adapter.token_count(text) for text in (original, low, high))
-        fits = max(counts) <= capacity
-        db.add_probe_token_check(triplet_id, args.detector, counts, fits)
-        if not fits:
-            rejected += 1
-            continue
-        for intensity, text in (("original", original), ("low", low), ("high", high)):
-            variant_id = f"{probe}:{intensity}"
-            if db.has_score(record_id, args.detector, variant_id):
-                skipped += 1
+        for detector, adapter in adapters.items():
+            spec = SPECS[detector]
+            capacity = min(spec.max_tokens - 32, 460)
+            counts = tuple(adapter.token_count(text) for text in (original, low, high))
+            fits = max(counts) <= capacity
+            db.add_probe_token_check(triplet_id, detector, counts, fits)
+            if not fits:
+                rejected += 1
                 continue
-            try:
-                payload = asdict(adapter.score(text))
-            except Exception as error:
-                payload = {
-                    "failure": f"{type(error).__name__}: {error}",
-                    "native_score": None, "canonical_ai_score": None,
-                    "input_token_count": adapter.token_count(text), "effective_token_count": 0,
-                    "max_tokens": spec.max_tokens, "truncated": False, "runtime_ms": 0.0,
-                }
-            db.add_score(record_id, args.detector, spec.dependency_group, payload, variant_id)
-            completed += 1
+            for intensity, text in (("original", original), ("low", low), ("high", high)):
+                variant_id = f"{probe}:{intensity}"
+                if db.has_score(record_id, detector, variant_id):
+                    skipped += 1
+                    continue
+                try:
+                    payload = asdict(adapter.score(text))
+                except Exception as error:
+                    payload = {
+                        "failure": f"{type(error).__name__}: {error}",
+                        "native_score": None, "canonical_ai_score": None,
+                        "input_token_count": adapter.token_count(text), "effective_token_count": 0,
+                        "max_tokens": spec.max_tokens, "truncated": False, "runtime_ms": 0.0,
+                    }
+                db.add_score(record_id, detector, spec.dependency_group, payload, variant_id)
+                completed += 1
     db.close()
     print(f"Probe scores {completed}; triplets rejected {rejected}; resumed/skipped {skipped}.")
 
@@ -297,16 +309,20 @@ def pilot(args: argparse.Namespace) -> None:
 
 
 def score_source(args: argparse.Namespace) -> None:
+    detector_ids = tuple(dict.fromkeys((args.detector, *args.paired_detector)))
+    if len({SPECS[detector].dependency_group for detector in detector_ids}) != 1:
+        raise ValueError("Paired source detectors must share one inference backend")
     root = storage_root()
     master = root / "state" / "fprint.sqlite3"
     _score(
         args, ["source_summary", "source_model"], database=master,
-        include_corpora=STUDY_CORPORA,
+        include_corpora=STUDY_CORPORA, detector_ids=detector_ids,
     )
-    _score_probes(args, master, STUDY_CORPORA)
+    _score_probes(args, master, STUDY_CORPORA, detector_ids)
     paths = fold_paths(storage_root(), args.target_corpus)
     db = StudyDB(paths.database)
-    db.import_source_results(master, args.detector, args.target_corpus)
+    for detector in detector_ids:
+        db.import_source_results(master, detector, args.target_corpus)
     db.close()
     print(f"Imported leakage-safe source cache into fold: {args.target_corpus}")
 
@@ -372,10 +388,14 @@ def evaluate(args: argparse.Namespace) -> None:
                 row["corpus"], row["detector"], row["dependency_group"],
                 int(row["signature_size"]), int(row["draw"]), row["model"],
                 float(row["prediction"]), float(row["observed_fpr"]),
+                float(row["operating_fpr"]),
             )
             for row in csv.DictReader(handle)
         ]
-    result = evaluate_success_gate(rows, required_corpora=STUDY_CORPORA)
+    result = evaluate_success_gate(
+        rows, required_corpora=STUDY_CORPORA,
+        operating_fpr=args.operating_fpr,
+    )
     output = {
         "passed": result.passed,
         "sign_flip_p": result.sign_flip_p,
@@ -406,6 +426,7 @@ def build_parser() -> argparse.ArgumentParser:
     pilot_parser.set_defaults(func=pilot)
     source_parser = sub.add_parser("score-source")
     scoring_arguments(source_parser)
+    source_parser.add_argument("--paired-detector", action="append", choices=sorted(SPECS), default=[])
     source_parser.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
     source_parser.set_defaults(func=score_source)
     calibrate_parser = sub.add_parser("calibrate")
@@ -419,8 +440,17 @@ def build_parser() -> argparse.ArgumentParser:
     forecast_parser.add_argument("--forecasts", type=Path, required=True)
     forecast_parser.add_argument("--manifest", type=Path, required=True)
     forecast_parser.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
-    forecast_parser.add_argument("--phase", choices=("zero", "privileged"), default="zero")
+    forecast_parser.add_argument("--phase", choices=("privileged",), default="privileged")
     forecast_parser.set_defaults(func=forecast)
+    build_parser_ = sub.add_parser("build-zero-forecasts")
+    build_parser_.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
+    build_parser_.add_argument("--threshold-artifact", type=Path, required=True)
+    build_parser_.add_argument("--output-dir", type=Path)
+    build_parser_.add_argument(
+        "--admitted-detectors", nargs="+", choices=sorted(SPECS),
+        default=sorted(SPECS),
+    )
+    build_parser_.set_defaults(func=build_zero)
     target_parser = sub.add_parser("score-target")
     target_parser.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
     target_parser.add_argument("--partition", choices=("privileged_signature", "test"), required=True)
@@ -431,6 +461,7 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate_parser = sub.add_parser("evaluate")
     evaluate_parser.add_argument("--rows", type=Path, required=True)
     evaluate_parser.add_argument("--output", type=Path, required=True)
+    evaluate_parser.add_argument("--operating-fpr", type=float, choices=(.05, .01), default=.05)
     evaluate_parser.set_defaults(func=evaluate)
     return parser
 

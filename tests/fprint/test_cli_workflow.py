@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fprint.cli import _read_corpora, build_parser
+from fprint.cli import _read_corpora, build_parser, score_source
 from fprint.core import STUDY_CORPORA, TARGET_CORPORA, StudyDB, TextRecord
 
 
@@ -63,6 +63,19 @@ class CliWorkflowTests(unittest.TestCase):
         self.assertEqual(args.target_corpus, "pmc")
         self.assertEqual(args.partition, "test")
 
+    def test_zero_lock_cannot_accept_external_forecast_json(self):
+        parser = build_parser()
+        with self.assertRaises(SystemExit):
+            parser.parse_args([
+                "forecast", "--phase", "zero", "--target-corpus", "pmc",
+                "--manifest", "manifest.json", "--forecasts", "forecasts.json",
+            ])
+        args = parser.parse_args([
+            "build-zero-forecasts", "--target-corpus", "pmc",
+            "--threshold-artifact", "thresholds.json",
+        ])
+        self.assertEqual(args.target_corpus, "pmc")
+
     def test_bawe_is_target_only_and_never_a_primary_source(self):
         self.assertEqual(TARGET_CORPORA, STUDY_CORPORA + ("bawe",))
         args = build_parser().parse_args([
@@ -84,6 +97,18 @@ class CliWorkflowTests(unittest.TestCase):
             }
             db.close()
         self.assertEqual(selected, {"pmc:1"})
+
+    def test_source_scoring_accepts_paired_shared_backend(self):
+        args = build_parser().parse_args([
+            "score-source", "--target-corpus", "pmc",
+            "--detector", "logrank__qwen2_5_0_5b_fp32",
+            "--paired-detector", "lastde__qwen2_5_0_5b_fp32",
+        ])
+        self.assertEqual(args.paired_detector, ["lastde__qwen2_5_0_5b_fp32"])
+
+        args.paired_detector = ["openai_roberta_base__gpt2_legacy"]
+        with self.assertRaises(ValueError):
+            score_source(args)
 
     def test_bawe_fails_closed_without_writer_id(self):
         with tempfile.TemporaryDirectory() as directory:
