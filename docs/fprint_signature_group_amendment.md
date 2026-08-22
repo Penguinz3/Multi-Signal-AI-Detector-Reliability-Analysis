@@ -15,4 +15,9 @@ both at least 1,000 records and at least 250 groups, then assigns at least 2,000
 test records. Author/user/article grouping, prompt stratification, the 20 seeded
 nested draws at sizes 50/100/250, and every target-score embargo remain
 unchanged. The earlier prepared/scored state is retained only as a failed
-preflight checkpoint; the experiment is rebuilt before forecasting.
+preflight checkpoint; the experiment is rebuilt before forecasting. Exact
+cached results may be reused only for unchanged RAID/source records and probe
+triplets whose IDs and complete texts match in both databases. The migration
+must fail closed on any record, group, role, or probe-content mismatch and must
+verify that it copied zero signature/test scores. All newly allocated probe
+triplets are scored normally before forecasting.
