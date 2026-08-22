@@ -78,7 +78,8 @@ F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint evaluate `
 `prepare` performs global exact and five-word-shingle near-deduplication before
 partitioning, including RAID-to-evaluation collisions. Groups are kept intact at
 author, user, student, article, book, report, or source-article level where
-available. ASAP-AES allocation is prompt-stratified.
+available. Every target signature reserves at least 1,000 records from at least
+250 whole groups. ASAP-AES allocation is prompt-stratified.
 
 Source detector inference is cached once, then copied into isolated outer-fold
 databases with the held-out corpus excluded. Probe triplets use deterministic

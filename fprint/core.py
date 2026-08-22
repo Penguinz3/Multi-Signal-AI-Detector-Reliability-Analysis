@@ -291,23 +291,37 @@ def assign_grouped_partitions(records: Sequence[TextRecord], seed: int = 2026072
             ):
                 raise ValueError(f"{corpus} lacks independent grouped target records")
             continue
-        remaining = dict(PARTITION_SIZES)
-        current = iter(PARTITION_SIZES)
-        partition = next(current)
-        for key in keys:
-            while partition in remaining and remaining[partition] <= 0:
-                try:
-                    partition = next(current)
-                except StopIteration:
-                    partition = "anchor_candidates"
-                    break
-            for record in groups[key]:
-                assignments[record.record_id] = partition
-            if partition in remaining:
-                remaining[partition] -= len(groups[key])
-        shortages = {name: count for name, count in remaining.items() if count > 0}
-        if shortages:
-            raise ValueError(f"{corpus} lacks grouped records for partitions: {shortages}")
+        index = 0
+        for partition in ("technical_pilot", "source_summary", "source_model"):
+            assigned = 0
+            while assigned < PARTITION_SIZES[partition] and index < len(keys):
+                key = keys[index]
+                index += 1
+                assigned += len(groups[key])
+                assignments.update((record.record_id, partition) for record in groups[key])
+            if assigned < PARTITION_SIZES[partition]:
+                raise ValueError(f"{corpus} lacks grouped records for {partition}")
+        signature_groups = signature_records = 0
+        while (
+            signature_groups < 250 or signature_records < PARTITION_SIZES["signature"]
+        ) and index < len(keys):
+            key = keys[index]
+            index += 1
+            signature_groups += 1
+            signature_records += len(groups[key])
+            assignments.update((record.record_id, "signature") for record in groups[key])
+        test_records = 0
+        while test_records < PARTITION_SIZES["test"] and index < len(keys):
+            key = keys[index]
+            index += 1
+            test_records += len(groups[key])
+            assignments.update((record.record_id, "test") for record in groups[key])
+        for key in keys[index:]:
+            assignments.update((record.record_id, "anchor_candidates") for record in groups[key])
+        if signature_groups < 250 or signature_records < PARTITION_SIZES["signature"]:
+            raise ValueError(f"{corpus} lacks 1,000 records from 250 signature groups")
+        if test_records < PARTITION_SIZES["test"]:
+            raise ValueError(f"{corpus} lacks grouped records for test")
     return assignments
 
 

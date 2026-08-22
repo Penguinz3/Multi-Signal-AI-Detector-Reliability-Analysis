@@ -25,6 +25,7 @@
     "source_summary": 500,
     "source_model": 1500,
     "signature": 1000,
+    "signature_minimum_groups": 250,
     "test": 2000
   },
   "external_target_partitions": {

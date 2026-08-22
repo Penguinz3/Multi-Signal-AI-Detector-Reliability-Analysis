@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from fprint.core import (
-    ProbeTriplet, TextRecord, backend_macro, canonical_text, deduplicate,
+    ProbeTriplet, TextRecord, assign_grouped_partitions, backend_macro, canonical_text, deduplicate,
     exact_sign_flip, jeffreys_posterior, lock_forecasts, make_probe_triplet,
     repeated_signature_samples, threshold, triplet_fits, validate_forecast_payload,
     verify_lock,
@@ -16,6 +16,22 @@ from fprint.modeling import Observation, RecomputedFold, tune_c_nested
 
 
 class FprintTests(unittest.TestCase):
+    def test_primary_signature_partition_requires_250_groups_and_1000_records(self):
+        records = []
+        for group in range(1200):
+            size = 20 if group < 300 else 1
+            records.extend(
+                TextRecord(f"r:{group}:{item}", "gutenberg", "text", f"author:{group}")
+                for item in range(size)
+            )
+        assignments = assign_grouped_partitions(records, seed=7)
+        signature = [record for record in records if assignments[record.record_id] == "signature"]
+        test = [record for record in records if assignments[record.record_id] == "test"]
+        self.assertGreaterEqual(len(signature), 1000)
+        self.assertGreaterEqual(len({record.group_id for record in signature}), 250)
+        self.assertGreaterEqual(len(test), 2000)
+        self.assertFalse({record.group_id for record in signature} & {record.group_id for record in test})
+
     def test_global_dedup_drops_cross_corpus_and_keeps_deterministic_local_winner(self):
         rows = [
             TextRecord("a2", "pmc", "Unique local sentence repeated enough for shingles.", "g2", 2),
