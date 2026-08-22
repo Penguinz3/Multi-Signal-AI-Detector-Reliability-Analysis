@@ -149,6 +149,7 @@ def build_forecast_manifest(
     profile_artifacts: Mapping[str, str],
     id_artifacts: Mapping[str, str],
     forecast_artifacts: Mapping[str, str],
+    uncertainty_artifacts: Mapping[str, str],
     code_commit: str,
 ) -> dict:
     _validate_threshold_artifact(thresholds, panel_revisions)
@@ -156,6 +157,7 @@ def build_forecast_manifest(
     _validate_artifact_hashes("profile", profile_artifacts)
     _validate_artifact_hashes("ID", id_artifacts)
     _validate_artifact_hashes("forecast", forecast_artifacts)
+    _validate_artifact_hashes("uncertainty", uncertainty_artifacts)
     if not GIT_REVISION.fullmatch(code_commit):
         raise ValueError("code_commit must be a hexadecimal Git revision")
     if not selected_c or not all(math.isfinite(float(value)) and float(value) > 0 for value in selected_c.values()):
@@ -198,6 +200,7 @@ def build_forecast_manifest(
         "profile_artifacts": dict(sorted(profile_artifacts.items())),
         "id_artifacts": dict(sorted(id_artifacts.items())),
         "forecast_artifacts": dict(sorted(forecast_artifacts.items())),
+        "uncertainty_artifacts": dict(sorted(uncertainty_artifacts.items())),
         "code_commit": code_commit,
         "builder_schema_version": 1,
     }
@@ -423,6 +426,7 @@ def _validate_manifest_for_fold(
         ("profile_artifacts", "profile"),
         ("id_artifacts", "ID"),
         ("forecast_artifacts", "forecast"),
+        ("uncertainty_artifacts", "uncertainty"),
     ):
         artifacts = manifest.get(key)
         if not isinstance(artifacts, Mapping):

@@ -574,6 +574,15 @@ def validate_forecast_payload(
         prediction = entry.get("prediction")
         if not isinstance(prediction, (int, float)) or not 0 <= prediction <= 1:
             raise ValueError(f"Invalid forecast prediction for {key}")
+        if any(re.fullmatch(r"[0-9a-f]{64}", str(entry.get(field, ""))) is None for field in ("forecast_id", "signature_ids_sha256")):
+            raise ValueError(f"Forecast cell lacks identity hashes: {key}")
+        if not isinstance(entry.get("fit_ref"), str) or not entry["fit_ref"]:
+            raise ValueError(f"Forecast cell lacks fit provenance: {key}")
+        if entry.get("model") == "main":
+            if entry.get("uncertainty_status") != "joint_cluster_bootstrap_v1" or not isinstance(entry.get("uncertainty_ref"), str):
+                raise ValueError(f"Main forecast lacks locked uncertainty: {key}")
+        elif entry.get("uncertainty_status") != "point_only_preregistered_secondary" or entry.get("uncertainty_ref") is not None:
+            raise ValueError(f"Secondary forecast uncertainty status is invalid: {key}")
         actual.add(key)
     missing, extra = expected - actual, actual - expected
     if missing or extra:

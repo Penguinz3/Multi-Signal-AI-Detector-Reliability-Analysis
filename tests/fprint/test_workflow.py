@@ -52,6 +52,7 @@ def manifest(paths, suffix: str = "a") -> dict:
         (f"profiles-{suffix}.json", "profile"),
         (f"ids-{suffix}.json", "ids"),
         (f"forecasts-{suffix}.json", "forecasts"),
+        (f"uncertainty-{suffix}.json", "uncertainty"),
     ):
         path = (paths.root / name).resolve()
         path.write_text(content, encoding="utf-8")
@@ -72,6 +73,7 @@ def manifest(paths, suffix: str = "a") -> dict:
         profile_artifacts=artifacts[f"profiles-{suffix}.json"],
         id_artifacts=artifacts[f"ids-{suffix}.json"],
         forecast_artifacts=artifacts[f"forecasts-{suffix}.json"],
+        uncertainty_artifacts=artifacts[f"uncertainty-{suffix}.json"],
         code_commit="c" * 40,
     )
 
@@ -121,6 +123,7 @@ class WorkflowTests(unittest.TestCase):
                 profile_artifacts=first["profile_artifacts"],
                 id_artifacts=first["id_artifacts"],
                 forecast_artifacts=first["forecast_artifacts"],
+                uncertainty_artifacts=first["uncertainty_artifacts"],
                 code_commit=first["code_commit"],
             )
             self.assertNotEqual(first["data_ids_sha256"], changed["data_ids_sha256"])

@@ -105,6 +105,14 @@ class FprintTests(unittest.TestCase):
                                 "operating_fpr": .05,
                                 "signature_size": size, "draw": draw, "model": model,
                                 "prediction": .05,
+                                "forecast_id": "a" * 64,
+                                "signature_ids_sha256": "b" * 64,
+                                "fit_ref": f"fit:.05:{model}",
+                                "uncertainty_status": (
+                                    "joint_cluster_bootstrap_v1" if model == "main"
+                                    else "point_only_preregistered_secondary"
+                                ),
+                                "uncertainty_ref": "conditional:a" if model == "main" else None,
                             })
         payload = {"forecasts": forecasts}
         validate_forecast_payload(

@@ -100,6 +100,13 @@ artifacts; generic external JSON cannot create a zero-score lock. Each lock
 contains the 5% primary and 1% sensitivity operating points and binds all
 artifacts by SHA-256. The builder refuses uncommitted FPRINT code, existing
 target scores, non-prelock folds, and incomplete detector or probe panels.
+Before locking, it also runs 100 deterministic joint cluster bootstraps for the
+main model at both operating points. Those replicates jointly resample the RAID
+threshold reference, corpus-specific author/document groups, and complete probe
+triplets while retaining the 20 preregistered grouped target-signature draws.
+Nested-CV regularization is frozen before the bootstrap. Secondary baselines are
+locked as preregistered point forecasts, and their paired uncertainty is assessed
+only after target outcomes are revealed.
 
 Historical Phi-2 fp16 and bf16 failures are preserved in
 `docs/protocol_amendment_phi2_bf16.md`. The replacement observer is the pinned

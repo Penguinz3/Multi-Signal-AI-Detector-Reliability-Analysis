@@ -36,6 +36,14 @@
   },
   "signature_sizes": [50, 100, 250],
   "signature_draws": 20,
+  "prelock_bootstrap": {
+    "method": "joint_cluster_bootstrap_v1",
+    "replicates": 100,
+    "interval_level": 0.90,
+    "models": ["main"],
+    "selected_c": "frozen_after_original_nested_cv",
+    "failure_rule": "all_100_replicates_required"
+  },
   "privileged_sizes": [25, 50, 100, 250],
   "probes": [
     "contraction_expansion",
