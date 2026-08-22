@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fprint.cli import _read_corpora, build_parser, score_source
 from fprint.core import STUDY_CORPORA, TARGET_CORPORA, StudyDB, TextRecord
+from fprint.detectors import SPECS
 
 
 class CliWorkflowTests(unittest.TestCase):
@@ -109,6 +110,26 @@ class CliWorkflowTests(unittest.TestCase):
         args.paired_detector = ["openai_roberta_base__gpt2_legacy"]
         with self.assertRaises(ValueError):
             score_source(args)
+
+    def test_privileged_target_ids_are_not_cli_selectable(self):
+        parser = build_parser()
+        with self.assertRaises(SystemExit):
+            parser.parse_args([
+                "score-target", "--target-corpus", "pmc",
+                "--partition", "privileged_signature",
+                "--record-ids", "arbitrary.txt",
+                "--detector", "openai_roberta_base__gpt2_legacy",
+                "--admitted-detectors", "openai_roberta_base__gpt2_legacy",
+            ])
+
+        args = parser.parse_args([
+            "score-target", "--target-corpus", "pmc",
+            "--partition", "privileged_signature",
+            "--detector", "logrank__qwen2_5_0_5b_fp32",
+            "--paired-detector", "lastde__qwen2_5_0_5b_fp32",
+            "--admitted-detectors", *SPECS,
+        ])
+        self.assertEqual(args.paired_detector, ["lastde__qwen2_5_0_5b_fp32"])
 
     def test_bawe_fails_closed_without_writer_id(self):
         with tempfile.TemporaryDirectory() as directory:

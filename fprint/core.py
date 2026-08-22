@@ -874,7 +874,8 @@ class StudyDB:
                        JOIN records r USING(record_id)
                        WHERE r.partition_name=? AND r.corpus=?
                          AND s.variant_id='original' AND s.detector_config=?
-                         AND s.failure IS NULL AND s.canonical_ai_score IS NOT NULL""",
+                         AND s.failure IS NULL AND s.canonical_ai_score IS NOT NULL
+                         AND s.truncated=0""",
                     (partition, corpus, detector),
                 )
             }

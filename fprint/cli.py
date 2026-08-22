@@ -14,12 +14,14 @@ from .core import (
     make_probe_triplet, storage_root,
 )
 from .detectors import SPECS, build_adapter, validate_labeled_pilot, validate_specs
-from .evaluation import ForecastEvaluationRow, evaluate_success_gate
+from .final_evaluation import run_final_evaluation
 from .forecasting import build_zero_forecasts
+from .privileged import (
+    build_privileged_comparator, build_privileged_plan, verify_privileged_plan,
+)
 from .workflow import (
     assert_all_target_locks, assert_target_score_allowed, build_threshold_artifact,
-    fold_paths, initialize_fold, lock_privileged_forecasts,
-    mark_signature_scored, mark_test_scored,
+    fold_paths, initialize_fold, mark_signature_scored, mark_test_scored,
 )
 
 
@@ -103,15 +105,6 @@ def prepare(args: argparse.Namespace) -> None:
         for row in audit:
             handle.write(json.dumps(row, sort_keys=True) + "\n")
     print(f"Prepared {len(clean)} records; audit: {audit_path}")
-
-
-def forecast(args: argparse.Namespace) -> None:
-    payload = json.loads(args.forecasts.read_text(encoding="utf-8"))
-    root = storage_root()
-    paths = fold_paths(root, args.target_corpus)
-    manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
-    digest = lock_privileged_forecasts(paths, manifest, payload)
-    print(f"Locked forecasts: {digest}")
 
 
 def build_zero(args: argparse.Namespace) -> None:
@@ -345,20 +338,20 @@ def score_target(args: argparse.Namespace) -> None:
     root = storage_root()
     assert_target_score_allowed(root, TARGET_CORPORA, args.target_corpus, args.partition)
     paths = fold_paths(root, args.target_corpus)
+    plan = verify_privileged_plan(root, args.target_corpus)
+    if set(args.admitted_detectors) != set(plan["admitted_detectors"]):
+        raise ValueError("Admitted detector panel does not match the locked privileged plan")
+    detector_ids = tuple(dict.fromkeys((args.detector, *args.paired_detector)))
+    if len({SPECS[detector].dependency_group for detector in detector_ids}) != 1:
+        raise ValueError("Paired target detectors must share one inference backend")
     if args.partition == "privileged_signature":
-        if not args.record_ids:
-            raise ValueError("--record-ids is required for privileged_signature")
-        allowed_ids = {
-            line.strip() for line in args.record_ids.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        }
-        if len(allowed_ids) != 250:
-            raise ValueError("Privileged signature requires exactly 250 nested target IDs")
+        allowed_ids = set(plan["sizes"]["250"])
         completed, skipped = _score(
             args, ["signature"], database=paths.database,
             include_corpus=args.target_corpus, allowed_ids=allowed_ids,
+            detector_ids=detector_ids,
         )
-        if completed + skipped != 250:
+        if completed + skipped != 250 * len(detector_ids):
             raise RuntimeError("Not all 250 privileged target IDs belong to the target signature partition")
         db = StudyDB(paths.database)
         missing = db.missing_partition_scores(
@@ -370,7 +363,10 @@ def score_target(args: argparse.Namespace) -> None:
         else:
             mark_signature_scored(root, TARGET_CORPORA, args.target_corpus)
     else:
-        _score(args, ["test"], database=paths.database, include_corpus=args.target_corpus)
+        _score(
+            args, ["test"], database=paths.database, include_corpus=args.target_corpus,
+            detector_ids=detector_ids,
+        )
         db = StudyDB(paths.database)
         missing = db.missing_partition_scores("test", args.target_corpus, args.admitted_detectors)
         db.close()
@@ -380,31 +376,17 @@ def score_target(args: argparse.Namespace) -> None:
             mark_test_scored(root, TARGET_CORPORA, args.target_corpus)
 
 
+def prepare_privileged(args: argparse.Namespace) -> None:
+    print(f"Locked privileged target plan: {build_privileged_plan(storage_root(), args.target_corpus)}")
+
+
+def build_privileged(args: argparse.Namespace) -> None:
+    print(f"Locked privileged comparator: {build_privileged_comparator(storage_root(), args.target_corpus)}")
+
+
 def evaluate(args: argparse.Namespace) -> None:
-    assert_all_target_locks(storage_root(), TARGET_CORPORA, privileged=True)
-    with args.rows.open(encoding="utf-8-sig", newline="") as handle:
-        rows = [
-            ForecastEvaluationRow(
-                row["corpus"], row["detector"], row["dependency_group"],
-                int(row["signature_size"]), int(row["draw"]), row["model"],
-                float(row["prediction"]), float(row["observed_fpr"]),
-                float(row["operating_fpr"]),
-            )
-            for row in csv.DictReader(handle)
-        ]
-    result = evaluate_success_gate(
-        rows, required_corpora=STUDY_CORPORA,
-        operating_fpr=args.operating_fpr,
-    )
-    output = {
-        "passed": result.passed,
-        "sign_flip_p": result.sign_flip_p,
-        "wins_over_detector_id": result.wins_over_detector_id,
-        "failures": result.failures,
-        "overall_mae": {f"{size}:{model}": value for (size, model), value in result.overall_mae.items()},
-    }
-    args.output.write_text(json.dumps(output, sort_keys=True, indent=2), encoding="utf-8")
-    print(f"Wrote evaluation: {args.output}")
+    run_final_evaluation(storage_root(), args.output_dir)
+    print(f"Wrote final evaluation: {args.output_dir.resolve()}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -436,12 +418,6 @@ def build_parser() -> argparse.ArgumentParser:
     artifact_parser.add_argument("--detectors", nargs="+", choices=sorted(SPECS), required=True)
     artifact_parser.add_argument("--output", type=Path, required=True)
     artifact_parser.set_defaults(func=threshold_artifact)
-    forecast_parser = sub.add_parser("forecast")
-    forecast_parser.add_argument("--forecasts", type=Path, required=True)
-    forecast_parser.add_argument("--manifest", type=Path, required=True)
-    forecast_parser.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
-    forecast_parser.add_argument("--phase", choices=("privileged",), default="privileged")
-    forecast_parser.set_defaults(func=forecast)
     build_parser_ = sub.add_parser("build-zero-forecasts")
     build_parser_.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
     build_parser_.add_argument("--threshold-artifact", type=Path, required=True)
@@ -451,17 +427,21 @@ def build_parser() -> argparse.ArgumentParser:
         default=sorted(SPECS),
     )
     build_parser_.set_defaults(func=build_zero)
+    plan_parser = sub.add_parser("prepare-privileged")
+    plan_parser.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
+    plan_parser.set_defaults(func=prepare_privileged)
     target_parser = sub.add_parser("score-target")
     target_parser.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
     target_parser.add_argument("--partition", choices=("privileged_signature", "test"), required=True)
-    target_parser.add_argument("--record-ids", type=Path)
     target_parser.add_argument("--admitted-detectors", nargs="+", choices=sorted(SPECS), required=True)
     scoring_arguments(target_parser)
+    target_parser.add_argument("--paired-detector", action="append", choices=sorted(SPECS), default=[])
     target_parser.set_defaults(func=score_target)
+    comparator_parser = sub.add_parser("build-privileged-comparator")
+    comparator_parser.add_argument("--target-corpus", choices=TARGET_CORPORA, required=True)
+    comparator_parser.set_defaults(func=build_privileged)
     evaluate_parser = sub.add_parser("evaluate")
-    evaluate_parser.add_argument("--rows", type=Path, required=True)
-    evaluate_parser.add_argument("--output", type=Path, required=True)
-    evaluate_parser.add_argument("--operating-fpr", type=float, choices=(.05, .01), default=.05)
+    evaluate_parser.add_argument("--output-dir", type=Path, required=True)
     evaluate_parser.set_defaults(func=evaluate)
     return parser
 

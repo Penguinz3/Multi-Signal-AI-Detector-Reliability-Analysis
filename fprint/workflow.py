@@ -439,6 +439,27 @@ def _validate_manifest_for_fold(
         raise ValueError("Forecast manifest has invalid selected C values")
     if not GIT_REVISION.fullmatch(str(manifest.get("code_commit", ""))):
         raise ValueError("Forecast manifest lacks a pinned code commit")
+    privileged_version = manifest.get("privileged_builder_schema_version")
+    if privileged_version is not None:
+        if privileged_version != 1:
+            raise ValueError("Unsupported privileged builder schema")
+        if not GIT_REVISION.fullmatch(str(manifest.get("privileged_code_commit", ""))):
+            raise ValueError("Privileged manifest lacks its implementation commit")
+        zero_envelope = verify_lock(paths.zero_lock)
+        if manifest.get("zero_lock_sha256") != zero_envelope["sha256"]:
+            raise RuntimeError("Privileged manifest zero-lock hash mismatch")
+        zero_payload = zero_envelope.get("payload")
+        zero_manifest = zero_payload.get("manifest") if isinstance(zero_payload, Mapping) else None
+        if not isinstance(zero_manifest, Mapping) or manifest.get("zero_manifest_sha256") != _digest(zero_manifest):
+            raise RuntimeError("Privileged manifest zero-manifest hash mismatch")
+        for key, label in (
+            ("privileged_plan_artifacts", "privileged plan"),
+            ("privileged_comparator_artifacts", "privileged comparator"),
+        ):
+            artifacts = manifest.get(key)
+            if not isinstance(artifacts, Mapping):
+                raise ValueError(f"Privileged manifest lacks {label} artifacts")
+            _validate_artifact_files(label, artifacts)
 
 
 def _read_state(paths: FoldPaths) -> dict:
