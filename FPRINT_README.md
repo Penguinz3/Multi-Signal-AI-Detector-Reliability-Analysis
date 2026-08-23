@@ -375,6 +375,10 @@ This project does not claim to solve AI-text detection. Detector behavior depend
 
 The project should be read as an empirical analysis of detector reliability and false-positive behavior under the tested conditions.
 
+## Behavioral conformance follow-up
+
+The isolated black-box fault-audit follow-up is specified in [docs/fault_audit_protocol.md](docs/fault_audit_protocol.md). It adds the `prepare-fault-audit`, `score-fault-audit`, and `evaluate-fault-audit` stages without modifying completed forecast artifacts. The analyzer detects departures from a locked behavioral reference, localizes contributing probes, and may assign only a coarse fault family; uncertain and predeclared multi-fault cases must remain inconclusive.
+
 ## License
 
 This project is released under the MIT License.

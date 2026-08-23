@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "seed": 20260729,
+  "primary_endpoints": [
+    "radar_roberta_large__vicuna7b_training",
+    "mage_longformer__paper",
+    "logrank__qwen2_5_0_5b_fp32"
+  ],
+  "control_endpoints": [
+    "lastde__qwen2_5_0_5b_fp32",
+    "openai_roberta_base__gpt2_legacy"
+  ],
+  "external_endpoints": [],
+  "probes": [
+    "punctuation_normalization",
+    "sentence_splitting",
+    "paragraph_resegmentation"
+  ],
+  "query_budgets": [10, 25, 50],
+  "draws": 20,
+  "bootstrap_replicates": 1000,
+  "anchors_per_probe_per_corpus": 50,
+  "confirmation_candidates_per_corpus": 50,
+  "confirmation_groups_per_corpus": 50,
+  "faults": [
+    {
+      "fault_id": "unchanged",
+      "family": "unchanged",
+      "severity": "none",
+      "stage": "none",
+      "mode": "identity"
+    },
+    {
+      "fault_id": "input_newline_flatten",
+      "family": "input_handling",
+      "severity": "mild",
+      "stage": "pre_inference",
+      "mode": "newline_flatten"
+    },
+    {
+      "fault_id": "input_whitespace_collapse",
+      "family": "input_handling",
+      "severity": "strong",
+      "stage": "pre_inference",
+      "mode": "whitespace_collapse"
+    },
+    {
+      "fault_id": "input_nfkc_whitespace",
+      "family": "input_handling",
+      "severity": "strong",
+      "stage": "pre_inference",
+      "mode": "nfkc_whitespace"
+    },
+    {
+      "fault_id": "output_bias_025",
+      "family": "output_policy",
+      "severity": "mild",
+      "stage": "post_score",
+      "mode": "logit_bias",
+      "parameters": {"bias": 0.25}
+    },
+    {
+      "fault_id": "output_bias_050",
+      "family": "output_policy",
+      "severity": "strong",
+      "stage": "post_score",
+      "mode": "logit_bias",
+      "parameters": {"bias": 0.5}
+    },
+    {
+      "fault_id": "output_temperature_080",
+      "family": "output_policy",
+      "severity": "mild",
+      "stage": "post_score",
+      "mode": "temperature",
+      "parameters": {"temperature": 0.8}
+    },
+    {
+      "fault_id": "output_threshold_001",
+      "family": "output_policy",
+      "severity": "strong",
+      "stage": "decision",
+      "mode": "threshold_policy",
+      "parameters": {"deployed_quantile": 0.99}
+    },
+    {
+      "fault_id": "core_radar_to_mage",
+      "family": "core_computation",
+      "severity": "strong",
+      "stage": "inference",
+      "mode": "endpoint_replacement",
+      "applicable_endpoints": ["radar_roberta_large__vicuna7b_training"],
+      "parameters": {"replacement": "mage_longformer__paper"}
+    },
+    {
+      "fault_id": "core_radar_to_openai",
+      "family": "core_computation",
+      "severity": "strong",
+      "stage": "inference",
+      "mode": "endpoint_replacement",
+      "applicable_endpoints": ["radar_roberta_large__vicuna7b_training"],
+      "parameters": {"replacement": "openai_roberta_base__gpt2_legacy"}
+    },
+    {
+      "fault_id": "core_mage_to_radar",
+      "family": "core_computation",
+      "severity": "strong",
+      "stage": "inference",
+      "mode": "endpoint_replacement",
+      "applicable_endpoints": ["mage_longformer__paper"],
+      "parameters": {"replacement": "radar_roberta_large__vicuna7b_training"}
+    },
+    {
+      "fault_id": "core_mage_to_openai",
+      "family": "core_computation",
+      "severity": "strong",
+      "stage": "inference",
+      "mode": "endpoint_replacement",
+      "applicable_endpoints": ["mage_longformer__paper"],
+      "parameters": {"replacement": "openai_roberta_base__gpt2_legacy"}
+    },
+    {
+      "fault_id": "core_logrank_to_lastde",
+      "family": "core_computation",
+      "severity": "strong",
+      "stage": "inference",
+      "mode": "endpoint_replacement",
+      "applicable_endpoints": ["logrank__qwen2_5_0_5b_fp32"],
+      "parameters": {"replacement": "lastde__qwen2_5_0_5b_fp32"}
+    },
+    {
+      "fault_id": "core_logrank_to_mean_logprob",
+      "family": "core_computation",
+      "severity": "moderate",
+      "stage": "inference",
+      "mode": "mean_logprob",
+      "applicable_endpoints": ["logrank__qwen2_5_0_5b_fp32"]
+    },
+    {
+      "fault_id": "unknown_input_output",
+      "family": "unknown",
+      "severity": "combined",
+      "stage": "derived",
+      "mode": "combined",
+      "parameters": {"source_fault": "input_newline_flatten", "bias": 0.25}
+    },
+    {
+      "fault_id": "unknown_core_output",
+      "family": "unknown",
+      "severity": "combined",
+      "stage": "derived",
+      "mode": "combined_core",
+      "parameters": {"bias": 0.25}
+    }
+  ],
+  "success_gates": {
+    "query_budget": 50,
+    "minimum_sensitivity": 0.8,
+    "maximum_false_alarm_rate": 0.05,
+    "minimum_corpus_wins": 6,
+    "maximum_permutation_p": 0.05,
+    "minimum_diagnosis_macro_f1": 0.65,
+    "minimum_diagnosis_gain": 0.05,
+    "minimum_unknown_rejection": 0.9
+  }
+}

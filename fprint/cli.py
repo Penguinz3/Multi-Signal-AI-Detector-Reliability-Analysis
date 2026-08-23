@@ -14,6 +14,9 @@ from .core import (
     make_probe_triplet, storage_root,
 )
 from .detectors import SPECS, build_adapter, validate_labeled_pilot, validate_specs
+from .conformance import (
+    evaluate_fault_audit, import_score_table, prepare_fault_audit, score_fault_audit,
+)
 from .final_evaluation import run_final_evaluation
 from .fingerprint_geometry import write_fingerprint_geometry
 from .forecasting import build_zero_forecasts
@@ -399,6 +402,36 @@ def evaluate(args: argparse.Namespace) -> None:
     print(f"Wrote final evaluation: {args.output_dir.resolve()}")
 
 
+def prepare_conformance(args: argparse.Namespace) -> None:
+    manifest = prepare_fault_audit(args.source_root, args.audit_root, args.config, args.evaluation)
+    print(
+        f"Locked {len(manifest['triplet_ids'])} discovery triplets and "
+        f"{len(manifest['confirmation_candidate_ids'])} prospective candidates at {args.audit_root.resolve()}"
+    )
+
+
+def score_conformance(args: argparse.Namespace) -> None:
+    if args.import_score_table:
+        print(f"Imported {import_score_table(args.audit_root, args.import_score_table)} canonical score rows.")
+        return
+    if not args.endpoint or not args.fault:
+        raise ValueError("Provide --endpoint and --fault, or --import-score-table")
+    counts = score_fault_audit(
+        args.audit_root, args.endpoint, args.fault,
+        device=args.device, mage_repo=args.mage_repo, source_kind=args.source_kind,
+    )
+    print("Fault-audit scoring: " + ", ".join(f"{key}={value}" for key, value in counts.items()))
+
+
+def evaluate_conformance(args: argparse.Namespace) -> None:
+    report = evaluate_fault_audit(args.audit_root, args.output_dir)
+    gate = report["success_gates"]
+    print(
+        f"Fault audit evaluated: claim={gate['permitted_primary_claim']}; "
+        f"artifacts={report['artifacts']}"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="fprint", description="Fixed-threshold detector FPR forecasting")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -458,6 +491,36 @@ def build_parser() -> argparse.ArgumentParser:
     geometry_parser.add_argument("--evaluation", type=Path, required=True)
     geometry_parser.add_argument("--output-dir", type=Path, required=True)
     geometry_parser.set_defaults(func=analyze_geometry)
+    fault_prepare = sub.add_parser(
+        "prepare-fault-audit",
+        help="Create and hash-lock the isolated behavioral conformance challenge",
+    )
+    fault_prepare.add_argument("--source-root", type=Path, required=True)
+    fault_prepare.add_argument("--audit-root", type=Path, required=True)
+    fault_prepare.add_argument("--config", type=Path, default=Path("fault_audit_config.json"))
+    fault_prepare.add_argument("--evaluation", type=Path, required=True)
+    fault_prepare.set_defaults(func=prepare_conformance)
+    fault_score = sub.add_parser(
+        "score-fault-audit",
+        help="Resumably score inference faults or import a canonical score table",
+    )
+    fault_score.add_argument("--audit-root", type=Path, required=True)
+    fault_score.add_argument("--endpoint", choices=sorted(SPECS))
+    fault_score.add_argument("--fault")
+    fault_score.add_argument("--device", type=int, default=0)
+    fault_score.add_argument("--mage-repo")
+    fault_score.add_argument(
+        "--source-kind", choices=("all", "discovery", "confirmation_candidate"), default="all",
+    )
+    fault_score.add_argument("--import-score-table", type=Path)
+    fault_score.set_defaults(func=score_conformance)
+    fault_evaluate = sub.add_parser(
+        "evaluate-fault-audit",
+        help="Run nested held-out-corpus change detection and abstaining diagnosis",
+    )
+    fault_evaluate.add_argument("--audit-root", type=Path, required=True)
+    fault_evaluate.add_argument("--output-dir", type=Path)
+    fault_evaluate.set_defaults(func=evaluate_conformance)
     return parser
 
 
