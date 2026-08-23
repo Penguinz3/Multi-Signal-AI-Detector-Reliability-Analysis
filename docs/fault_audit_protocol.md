@@ -17,7 +17,7 @@ Faults are declared in [`fault_audit_config.json`](../fault_audit_config.json):
 - core computation: supervised endpoint replacement, LogRank-to-Lastde replacement, and LogRank-to-mean-log-probability replacement;
 - unknown cases: predeclared input-plus-output and core-plus-output combinations.
 
-An independent confirmation panel is formed prospectively from 50 unused paragraph-resegmentation groups in each of nine corpora. A triplet that fails the frozen capacity rule remains rejected rather than being replaced post hoc. Unused non-paragraph records remain untouched.
+An independent confirmation panel is formed prospectively from 50 unused paragraph-resegmentation groups in each of nine corpora. Preparation freezes a score-blind reserve pool and a maximum 180-word common span. After every replacement endpoint has completed unchanged capacity validation, a second exclusive lock selects the first 50 valid groups per corpus by the frozen hash order. Injected-fault scoring is refused until this panel lock exists, so fault outcomes cannot influence selection. Unused non-paragraph records remain untouched.
 
 ## Isolation and locking
 

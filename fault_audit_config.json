@@ -20,8 +20,9 @@
   "draws": 20,
   "bootstrap_replicates": 1000,
   "anchors_per_probe_per_corpus": 50,
-  "confirmation_candidates_per_corpus": 50,
+  "confirmation_candidates_per_corpus": 100,
   "confirmation_groups_per_corpus": 50,
+  "confirmation_max_words": 180,
   "faults": [
     {
       "fault_id": "unchanged",

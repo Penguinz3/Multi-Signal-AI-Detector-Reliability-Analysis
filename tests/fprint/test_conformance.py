@@ -127,6 +127,7 @@ class ConformanceStorageTests(unittest.TestCase):
         ]
         manifest = {"config": config, "faults": faults}
         lock_forecasts(paths.lock, manifest)
+        lock_forecasts(paths.confirmation_lock, {"triplet_ids": ["t"]})
         connection = _connect(paths.database)
         connection.execute(
             "INSERT INTO audit_triplets VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",

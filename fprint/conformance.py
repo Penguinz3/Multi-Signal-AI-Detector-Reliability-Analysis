@@ -106,12 +106,18 @@ class AuditPaths:
     root: Path
     database: Path
     lock: Path
+    confirmation_lock: Path
     results: Path
 
 
 def audit_paths(root: Path) -> AuditPaths:
     root = Path(root).resolve()
-    return AuditPaths(root, root / "state" / "fault_audit.sqlite3", root / "locks" / "fault_audit.json", root / "results")
+    return AuditPaths(
+        root, root / "state" / "fault_audit.sqlite3",
+        root / "locks" / "fault_audit.json",
+        root / "locks" / "confirmation_panel.json",
+        root / "results",
+    )
 
 
 def load_fault_config(path: Path) -> tuple[dict, dict[str, FaultSpec]]:
@@ -292,6 +298,7 @@ def _confirmation_candidates(
     corpora: Sequence[str],
     seed: int,
     limit: int,
+    max_words: int,
 ) -> list[tuple]:
     connection = _readonly(source_root / "folds" / "bawe" / "fprint.sqlite3")
     try:
@@ -312,7 +319,9 @@ def _confirmation_candidates(
         corpus, group_id = str(row["corpus"]), str(row["group_id"])
         if corpus not in by_corpus or group_id in used_groups or group_id in by_corpus[corpus]:
             continue
-        triplet = make_probe_triplet("paragraph_resegmentation", str(row["text"]), str(row["record_id"]))
+        pieces = re.findall(r"\S+\s*", str(row["text"]))
+        bounded_text = "".join(pieces[:max_words]).strip()
+        triplet = make_probe_triplet("paragraph_resegmentation", bounded_text, str(row["record_id"]))
         if triplet is None:
             continue
         triplet_id = hashlib.sha256(f"fault-confirmation:{row['record_id']}".encode()).hexdigest()
@@ -382,6 +391,7 @@ def prepare_fault_audit(source_root: Path, audit_root: Path, config_path: Path, 
     candidates = _confirmation_candidates(
         source_root, all_corpora, int(config["seed"]),
         int(config["confirmation_candidates_per_corpus"]),
+        int(config["confirmation_max_words"]),
     )
     manifest = {
         "schema_version": 1,
@@ -427,6 +437,7 @@ def prepare_fault_audit(source_root: Path, audit_root: Path, config_path: Path, 
             "outer_split": "leave_one_corpus_out",
             "diagnosis_split": "leave_one_corpus_and_fault_variant_out",
             "unknown_policy": "distance_and_margin_abstention",
+            "confirmation_selection": "first_50_hash_ordered_groups_valid_on_all_unchanged_endpoints",
             "claims_excluded": ["deployment_fpr", "exact_proprietary_internal_change"],
         },
     }
@@ -539,6 +550,86 @@ def _score_payload(adapter: object, text: str, mode: str, connection: sqlite3.Co
     return asdict(adapter.score(text))  # type: ignore[attr-defined]
 
 
+def _required_unchanged_endpoints(config: Mapping[str, object], faults: Mapping[str, FaultSpec]) -> set[str]:
+    endpoints = {str(value) for value in config["primary_endpoints"]}
+    endpoints.update(
+        str(fault.parameters["replacement"])
+        for fault in faults.values() if fault.mode == "endpoint_replacement"
+    )
+    return endpoints
+
+
+def _confirmation_panel(paths: AuditPaths) -> set[str]:
+    if not paths.confirmation_lock.is_file():
+        return set()
+    return {str(value) for value in verify_lock(paths.confirmation_lock)["payload"]["triplet_ids"]}
+
+
+def _maybe_lock_confirmation_panel(
+    paths: AuditPaths,
+    manifest: Mapping[str, object],
+    faults: Mapping[str, FaultSpec],
+) -> bool:
+    if paths.confirmation_lock.is_file():
+        verify_lock(paths.confirmation_lock)
+        return True
+    config = manifest["config"]
+    endpoints = _required_unchanged_endpoints(config, faults)
+    connection = _connect(paths.database)
+    try:
+        candidates = [dict(row) for row in connection.execute(
+            "SELECT triplet_id,corpus,group_id FROM audit_triplets WHERE source_kind='confirmation_candidate'"
+        )]
+        expected = len(candidates) * 3
+        for endpoint in endpoints:
+            observed = connection.execute(
+                """SELECT COUNT(*) FROM audit_scores s JOIN audit_triplets t USING(triplet_id)
+                    WHERE t.source_kind='confirmation_candidate'
+                      AND s.audited_endpoint=? AND s.fault_id='unchanged'""",
+                (endpoint,),
+            ).fetchone()[0]
+            if observed != expected:
+                return False
+        valid = []
+        for row in candidates:
+            invalid = connection.execute(
+                """SELECT COUNT(*) FROM audit_scores
+                    WHERE triplet_id=? AND fault_id='unchanged'
+                      AND audited_endpoint IN ({})
+                      AND (failure IS NOT NULL OR truncated=1 OR canonical_ai_score IS NULL)""".format(
+                          ",".join("?" for _ in endpoints)
+                      ),
+                (row["triplet_id"], *sorted(endpoints)),
+            ).fetchone()[0]
+            if not invalid:
+                valid.append(row)
+    finally:
+        connection.close()
+    selected = []
+    per_corpus = int(config["confirmation_groups_per_corpus"])
+    for corpus in manifest["confirmation_corpora"]:
+        rows = [row for row in valid if row["corpus"] == corpus]
+        rows.sort(key=lambda row: hashlib.sha256(
+            f"{config['seed']}:confirmation-panel:{row['group_id']}:{row['triplet_id']}".encode()
+        ).hexdigest())
+        if len(rows) < per_corpus:
+            raise RuntimeError(f"{corpus} has only {len(rows)} panel-valid confirmation candidates; need {per_corpus}")
+        selected.extend(rows[:per_corpus])
+    payload = {
+        "schema_version": 1,
+        "parent_manifest_sha256": _file_digest(paths.lock),
+        "selection_rule": "score-blind hash order after all-endpoint capacity/failure validation",
+        "required_unchanged_endpoints": sorted(endpoints),
+        "triplet_ids": [str(row["triplet_id"]) for row in selected],
+        "groups_per_corpus": per_corpus,
+        "selected_rows_sha256": _digest([
+            [row["triplet_id"], row["corpus"], row["group_id"]] for row in selected
+        ]),
+    }
+    lock_forecasts(paths.confirmation_lock, payload)
+    return True
+
+
 def score_fault_audit(
     audit_root: Path,
     endpoint: str,
@@ -561,6 +652,8 @@ def score_fault_audit(
         raise ValueError(f"{fault_id} does not apply to {endpoint}")
     if fault.stage in {"post_score", "decision", "derived"} or fault.mode == "endpoint_replacement":
         return {"completed": 0, "skipped": 0, "rejected_triplets": 0, "derived": 1}
+    if fault_id != "unchanged" and not paths.confirmation_lock.is_file():
+        raise RuntimeError("Score all unchanged confirmation endpoints before generating any fault output")
     effective = str(fault.parameters.get("replacement", endpoint))
     adapter_endpoint = "logrank__qwen2_5_0_5b_fp32" if fault.mode == "mean_logprob" else effective
     adapter = build_adapter(adapter_endpoint, device, mage_repo)
@@ -574,6 +667,12 @@ def score_fault_audit(
         "SELECT * FROM audit_triplets" + filters + " ORDER BY corpus,probe,triplet_id",
         parameters,
     ).fetchall()
+    confirmation_ids = _confirmation_panel(paths)
+    if fault_id != "unchanged":
+        rows = [
+            row for row in rows
+            if row["source_kind"] != "confirmation_candidate" or row["triplet_id"] in confirmation_ids
+        ]
     completed = skipped = rejected = 0
     try:
         for row in rows:
@@ -653,7 +752,11 @@ def score_fault_audit(
                 completed += 1
     finally:
         audit.close()
-    return {"completed": completed, "skipped": skipped, "rejected_triplets": rejected, "derived": 0}
+    panel_locked = _maybe_lock_confirmation_panel(paths, manifest, faults) if fault_id == "unchanged" else True
+    return {
+        "completed": completed, "skipped": skipped, "rejected_triplets": rejected,
+        "derived": 0, "confirmation_panel_locked": int(panel_locked),
+    }
 
 
 def _insert_score(
@@ -733,6 +836,9 @@ def import_score_table(audit_root: Path, table: Path) -> int:
                 imported += 1
     finally:
         connection.close()
+    _maybe_lock_confirmation_panel(paths, manifest, {
+        row["fault_id"]: FaultSpec.from_mapping(row) for row in manifest["faults"]
+    })
     return imported
 
 
@@ -747,11 +853,7 @@ def fault_audit_readiness(audit_root: Path) -> dict:
     config = manifest["config"]
     faults = {row["fault_id"]: FaultSpec.from_mapping(row) for row in manifest["faults"]}
     required: set[tuple[str, str]] = set()
-    endpoints = {str(value) for value in config["primary_endpoints"]}
-    endpoints.update(
-        str(fault.parameters["replacement"])
-        for fault in faults.values() if fault.mode == "endpoint_replacement"
-    )
+    endpoints = _required_unchanged_endpoints(config, faults)
     required.update((endpoint, "unchanged") for endpoint in endpoints)
     required.update(
         (endpoint, fault.fault_id)
@@ -770,9 +872,17 @@ def fault_audit_readiness(audit_root: Path) -> dict:
             for row in connection.execute("SELECT source_kind,COUNT(*) FROM audit_triplets GROUP BY source_kind")
         }
         missing = []
+        confirmation_ids = _confirmation_panel(paths)
+        if not confirmation_ids:
+            missing.append({"source_kind": "confirmation_candidate", "fault_id": "panel_lock", "missing_rows": 1})
         for source_kind, triplet_count in sorted(triplet_counts.items()):
-            expected = triplet_count * 3
             for endpoint, fault_id in sorted(required):
+                effective_count = (
+                    len(confirmation_ids)
+                    if source_kind == "confirmation_candidate" and fault_id != "unchanged"
+                    else triplet_count
+                )
+                expected = effective_count * 3
                 observed = connection.execute(
                     """SELECT COUNT(*) FROM audit_scores s JOIN audit_triplets t USING(triplet_id)
                         WHERE t.source_kind=? AND s.audited_endpoint=? AND s.fault_id=?""",
@@ -995,13 +1105,18 @@ def _make_observations(
     faults: Mapping[str, FaultSpec],
     config: Mapping[str, object],
     source_kind: str,
+    allowed_triplet_ids: set[str] | None = None,
 ) -> list[dict]:
     probes = list(config["probes"]) if source_kind == "discovery" else ["paragraph_resegmentation"]
     corpora = sorted({str(row["corpus"]) for row in triplets if row["source_kind"] == source_kind})
     budgets = list(config["query_budgets"]) if source_kind == "discovery" else [int(config["confirmation_groups_per_corpus"])]
     draws = int(config["draws"]) if source_kind == "discovery" else 1
     endpoints = [str(value) for value in config["primary_endpoints"]]
-    pool = [row for row in triplets if row["source_kind"] == source_kind]
+    pool = [
+        row for row in triplets
+        if row["source_kind"] == source_kind
+        and (allowed_triplet_ids is None or str(row["triplet_id"]) in allowed_triplet_ids)
+    ]
     observations = []
     for corpus in corpora:
         for budget in budgets:
@@ -1384,7 +1499,10 @@ def evaluate_fault_audit(audit_root: Path, output_dir: Path | None = None) -> di
     triplets, scores = _load_audit_state(paths)
     references = _reference_distributions(manifest)
     discovery = _make_observations(triplets, scores, references, faults, config, "discovery")
-    confirmation = _make_observations(triplets, scores, references, faults, config, "confirmation_candidate")
+    confirmation = _make_observations(
+        triplets, scores, references, faults, config, "confirmation_candidate",
+        _confirmation_panel(paths),
+    )
     if not discovery:
         raise RuntimeError("No complete discovery observations; run score-fault-audit for required inference faults")
     predictions = []
