@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import array
 import hashlib
 import json
 import math
@@ -9,14 +10,16 @@ import re
 import sqlite3
 import statistics
 import subprocess
+import time
 import unicodedata
+import zlib
 from bisect import bisect_right
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Mapping, Sequence
 
 from .core import canonical_json, exact_sign_flip, lock_forecasts, make_probe_triplet, slope, verify_lock
-from .detectors import SPECS, build_adapter
+from .detectors import SPECS, build_adapter, lastde as lastde_statistic, logrank as logrank_statistic
 
 
 AUDIT_SCHEMA = """
@@ -58,6 +61,15 @@ CREATE TABLE IF NOT EXISTS audit_score_cache(
     input_sha256 TEXT NOT NULL,
     payload_json TEXT NOT NULL,
     PRIMARY KEY(effective_endpoint,scoring_mode,input_sha256)
+);
+CREATE TABLE IF NOT EXISTS audit_token_sequences(
+    observer_key TEXT NOT NULL,
+    input_sha256 TEXT NOT NULL,
+    token_count INTEGER NOT NULL,
+    ranks_int32_zlib BLOB NOT NULL,
+    log_probs_float32_zlib BLOB NOT NULL,
+    cache_hash TEXT NOT NULL,
+    PRIMARY KEY(observer_key,input_sha256)
 );
 """
 
@@ -183,6 +195,16 @@ def _readonly(path: Path) -> sqlite3.Connection:
 
 
 def _verify_audit_database(paths: AuditPaths, manifest: Mapping[str, object]) -> None:
+    local_files = {
+        "conformance.py": Path(__file__),
+        "core.py": Path(__file__).with_name("core.py"),
+        "detectors.py": Path(__file__).with_name("detectors.py"),
+        "fault_audit_config.json": Path(__file__).resolve().parents[1] / "fault_audit_config.json",
+    }
+    for name, expected in manifest.get("code_sha256", {}).items():
+        path = local_files.get(str(name))
+        if path is None or not path.is_file() or _file_digest(path) != expected:
+            raise RuntimeError(f"Current audit code/config disagrees with locked digest: {name}")
     connection = _readonly(paths.database)
     try:
         metadata = connection.execute(
@@ -440,20 +462,79 @@ def prepare_fault_audit(source_root: Path, audit_root: Path, config_path: Path, 
     return manifest
 
 
-def _score_payload(adapter: object, text: str, mode: str) -> dict:
-    if mode == "mean_logprob":
-        started = __import__("time").perf_counter()
-        sequence = adapter.scorer.sequence(text)  # type: ignore[attr-defined]
-        values = sequence["log_probs"]
-        native = float(sum(float(value) for value in values) / len(values))
+def _cached_token_sequence(connection: sqlite3.Connection, adapter: object, text: str) -> dict:
+    scorer, spec = adapter.scorer, adapter.spec  # type: ignore[attr-defined]
+    observer_key = f"{spec.model_id}@{spec.revision}:{spec.tokenizer_revision}:{spec.precision}"
+    input_sha256 = hashlib.sha256(text.encode()).hexdigest()
+    cached = connection.execute(
+        """SELECT token_count,ranks_int32_zlib,log_probs_float32_zlib,cache_hash
+             FROM audit_token_sequences WHERE observer_key=? AND input_sha256=?""",
+        (observer_key, input_sha256),
+    ).fetchone()
+    if cached:
+        ranks = array.array("i")
+        ranks.frombytes(zlib.decompress(cached["ranks_int32_zlib"]))
+        probabilities = array.array("f")
+        probabilities.frombytes(zlib.decompress(cached["log_probs_float32_zlib"]))
         return {
-            "native_score": native, "canonical_ai_score": native,
-            "input_token_count": int(sequence["token_count"]),
-            "effective_token_count": int(sequence["token_count"]),
-            "max_tokens": adapter.spec.max_tokens, "truncated": False,
-            "runtime_ms": (__import__("time").perf_counter() - started) * 1000,
-            "failure": None, "cache_hash": sequence.get("cache_hash"),
-            "statistic": "mean_token_log_probability",
+            "ranks": ranks, "log_probs": probabilities,
+            "token_count": int(cached["token_count"]), "cache_hash": str(cached["cache_hash"]),
+            "reused_from_compact_sequence_cache": True,
+        }
+    sequence = scorer.sequence(text)
+    ranks = array.array("i", (int(value) for value in sequence["ranks"]))
+    probabilities = array.array("f", (float(value) for value in sequence["log_probs"]))
+    with connection:
+        connection.execute(
+            "INSERT OR IGNORE INTO audit_token_sequences VALUES(?,?,?,?,?,?)",
+            (
+                observer_key, input_sha256, int(sequence["token_count"]),
+                zlib.compress(ranks.tobytes(), 6), zlib.compress(probabilities.tobytes(), 6),
+                str(sequence["cache_hash"]),
+            ),
+        )
+    return sequence
+
+
+def _score_payload(adapter: object, text: str, mode: str, connection: sqlite3.Connection) -> dict:
+    if hasattr(adapter, "scorer"):
+        started = time.perf_counter()
+        sequence = _cached_token_sequence(connection, adapter, text)
+        if mode == "mean_logprob":
+            values = sequence["log_probs"]
+            native = float(sum(float(value) for value in values) / len(values))
+            statistic = "mean_token_log_probability"
+        elif adapter.spec.method_family == "zero_shot_logrank":  # type: ignore[attr-defined]
+            native = logrank_statistic(sequence)
+            statistic = "logrank"
+        elif adapter.spec.method_family == "zero_shot_lastde":  # type: ignore[attr-defined]
+            native = lastde_statistic(sequence)
+            statistic = "lastde"
+        else:
+            raise ValueError("Unsupported cached statistical detector")
+        spec, scorer = adapter.spec, adapter.scorer  # type: ignore[attr-defined]
+        device_map = getattr(scorer.model, "hf_device_map", "auto")
+        if not isinstance(device_map, str):
+            device_map = json.dumps(device_map, sort_keys=True, default=str)
+        count = int(sequence["token_count"])
+        return {
+            "detector_config": spec.config_id, "method_family": spec.method_family,
+            "dependency_group": spec.dependency_group, "model_id": spec.model_id,
+            "model_revision": spec.revision, "tokenizer_revision": spec.tokenizer_revision,
+            "quantization": spec.quantization, "dtype": str(next(scorer.model.parameters()).dtype),
+            "device_map": device_map, "input_token_count": count,
+            "effective_token_count": count, "max_tokens": spec.max_tokens,
+            "truncated": False, "native_score": native, "canonical_ai_score": native,
+            "runtime_ms": (time.perf_counter() - started) * 1000, "failure": None,
+            "text_hash": hashlib.sha256(text.encode()).hexdigest(),
+            "cache_hash": sequence.get("cache_hash"), "precision": spec.precision,
+            "score_orientation": spec.score_orientation,
+            "implementation_revision": spec.implementation_revision,
+            "preprocessing_revision": spec.preprocessing_revision,
+            "attention_implementation": "eager", "candidate": spec.candidate,
+            "orientation_source": spec.orientation_source, "statistic": statistic,
+            "reused_from_compact_sequence_cache": bool(sequence.get("reused_from_compact_sequence_cache")),
+            "software_commit": _git_commit(Path(__file__).resolve().parents[1]),
         }
     return asdict(adapter.score(text))  # type: ignore[attr-defined]
 
@@ -553,7 +634,7 @@ def score_fault_audit(
                     payload["reused_from_input_cache"] = True
                 else:
                     try:
-                        payload = _score_payload(adapter, text, fault.mode)
+                        payload = _score_payload(adapter, text, fault.mode, audit)
                     except Exception as error:
                         payload = {
                             "native_score": None, "canonical_ai_score": None,

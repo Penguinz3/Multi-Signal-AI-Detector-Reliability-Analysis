@@ -3,10 +3,12 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from fprint.conformance import (
-    FaultSpec, _connect, _digest, _draw_triplets, _evaluate_channel, _feature_vector,
+    FaultSpec, _cached_token_sequence, _connect, _digest, _draw_triplets,
+    _evaluate_channel, _feature_vector,
     _summarize_predictions, audit_paths, import_score_table, remap_percentile,
     score_fault_audit, transform_input,
 )
@@ -23,6 +25,15 @@ def fault(fault_id, family, stage, mode, parameters=None):
 class _RejectingAdapter:
     def token_count(self, text):
         return 999
+
+
+class _SequenceScorer:
+    def __init__(self):
+        self.calls = 0
+
+    def sequence(self, text):
+        self.calls += 1
+        return {"ranks": [1, 3], "log_probs": [-.5, -1.5], "token_count": 3, "cache_hash": "abc"}
 
 
 class ConformanceUnitTests(unittest.TestCase):
@@ -77,6 +88,25 @@ class ConformanceUnitTests(unittest.TestCase):
         calibration = fault("cal", "output_policy", "post_score", "temperature", {"temperature": .8})
         values = [remap_percentile(value, calibration) for value in (.1, .3, .7, .9)]
         self.assertEqual(values, sorted(values))
+
+    def test_compact_qwen_sequence_cache_is_persistent(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            connection = _connect(Path(temporary) / "audit.sqlite3")
+            scorer = _SequenceScorer()
+            adapter = SimpleNamespace(
+                scorer=scorer,
+                spec=SimpleNamespace(
+                    model_id="observer", revision="model-revision",
+                    tokenizer_revision="tokenizer-revision", precision="fp32",
+                ),
+            )
+            first = _cached_token_sequence(connection, adapter, "same text")
+            second = _cached_token_sequence(connection, adapter, "same text")
+            connection.close()
+            self.assertEqual(scorer.calls, 1)
+            self.assertEqual(list(first["ranks"]), list(second["ranks"]))
+            self.assertEqual(list(first["log_probs"]), list(second["log_probs"]))
+            self.assertTrue(second["reused_from_compact_sequence_cache"])
 
 
 class ConformanceStorageTests(unittest.TestCase):

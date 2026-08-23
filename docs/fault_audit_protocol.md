@@ -35,7 +35,7 @@ python -m fprint.cli prepare-fault-audit `
 
 ## Scoring
 
-`score-fault-audit` is resumable. Input and mean-log-probability faults require inference. Monotone output and threshold faults are derived from frozen scores. Endpoint replacements reuse exact frozen scores when available. Every original/low/high triplet is rejected for an endpoint-fault pair if any member exceeds its scoring capacity; members are never independently truncated.
+`score-fault-audit` is resumable. Input and mean-log-probability faults require inference. Monotone output and threshold faults are derived from frozen scores. Endpoint replacements reuse exact frozen scores when available. The earlier archive retained Qwen score hashes but not the underlying arrays, so new Qwen passes are stored once in an audit-local compressed rank/log-probability cache and reused across LogRank, Lastde, and mean-log-probability. Every original/low/high triplet is rejected for an endpoint-fault pair if any member exceeds its scoring capacity; members are never independently truncated.
 
 ```powershell
 python -m fprint.cli score-fault-audit `
