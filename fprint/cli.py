@@ -15,6 +15,7 @@ from .core import (
 )
 from .detectors import SPECS, build_adapter, validate_labeled_pilot, validate_specs
 from .final_evaluation import run_final_evaluation
+from .fingerprint_geometry import write_fingerprint_geometry
 from .forecasting import build_zero_forecasts
 from .privileged import (
     build_privileged_comparator, build_privileged_plan, verify_privileged_plan,
@@ -113,6 +114,15 @@ def build_zero(args: argparse.Namespace) -> None:
         args.output_dir, args.admitted_detectors,
     )
     print("Built zero-score artifacts: " + ", ".join(f"{name}={path}" for name, path in outputs.items()))
+
+
+def analyze_geometry(args: argparse.Namespace) -> None:
+    report = write_fingerprint_geometry(args.storage_root, args.evaluation, args.output_dir)
+    identification = report["leave_one_corpus_out_detector_identification"]
+    print(
+        "Fingerprint geometry written; cosine detector identification "
+        f"{identification['cosine_accuracy']:.1%}."
+    )
 
 
 def _score(
@@ -443,6 +453,11 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate_parser = sub.add_parser("evaluate")
     evaluate_parser.add_argument("--output-dir", type=Path, required=True)
     evaluate_parser.set_defaults(func=evaluate)
+    geometry_parser = sub.add_parser("analyze-fingerprint-geometry")
+    geometry_parser.add_argument("--storage-root", type=Path, required=True)
+    geometry_parser.add_argument("--evaluation", type=Path, required=True)
+    geometry_parser.add_argument("--output-dir", type=Path, required=True)
+    geometry_parser.set_defaults(func=analyze_geometry)
     return parser
 
 

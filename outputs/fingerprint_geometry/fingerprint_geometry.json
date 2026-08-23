@@ -1,0 +1,5445 @@
+{
+  "corpora": [
+    "blog_authorship",
+    "gutenberg",
+    "stack_exchange",
+    "asap_aes",
+    "pmc",
+    "cnn_dailymail",
+    "govreport",
+    "wikitext_103"
+  ],
+  "cross_corpus_cosine": {
+    "by_detector": {
+      "lastde__qwen2_5_0_5b_fp32": {
+        "maximum": 0.9642537391294488,
+        "mean": 0.47337151600423577,
+        "median": 0.5414772081587689,
+        "minimum": -0.3179695140099843,
+        "n": 28
+      },
+      "logrank__qwen2_5_0_5b_fp32": {
+        "maximum": 0.999110687391284,
+        "mean": 0.9463665149750518,
+        "median": 0.9506677389190158,
+        "minimum": 0.8477785217821898,
+        "n": 28
+      },
+      "mage_longformer__paper": {
+        "maximum": 1.0,
+        "mean": 0.9991582956591784,
+        "median": 0.9995218632911795,
+        "minimum": 0.9959397300557985,
+        "n": 28
+      },
+      "openai_roberta_base__gpt2_legacy": {
+        "maximum": 0.9636061529352975,
+        "mean": 0.32888587001602543,
+        "median": 0.43474173607086,
+        "minimum": -0.7474221472734685,
+        "n": 28
+      },
+      "radar_roberta_large__vicuna7b_training": {
+        "maximum": 0.9995178075172165,
+        "mean": 0.9475847260635237,
+        "median": 0.9578617541303021,
+        "minimum": 0.769879421098568,
+        "n": 28
+      }
+    },
+    "pooled_between_detector_same_corpus": {
+      "maximum": 0.9984358543993226,
+      "mean": -0.15571316906700491,
+      "median": -0.2685535877719325,
+      "minimum": -0.9984280273946443,
+      "n": 80
+    },
+    "pooled_within_detector": {
+      "maximum": 1.0,
+      "mean": 0.739073384543603,
+      "median": 0.9382622518969272,
+      "minimum": -0.7474221472734685,
+      "n": 140
+    }
+  },
+  "detectors": [
+    "lastde__qwen2_5_0_5b_fp32",
+    "logrank__qwen2_5_0_5b_fp32",
+    "mage_longformer__paper",
+    "openai_roberta_base__gpt2_legacy",
+    "radar_roberta_large__vicuna7b_training"
+  ],
+  "leave_one_corpus_out_detector_identification": {
+    "cells": 40,
+    "chance_accuracy": 0.2,
+    "corpus_cluster_bootstrap_90_interval": [
+      0.675,
+      0.8250000000000001
+    ],
+    "cosine_accuracy": 0.75,
+    "euclidean_accuracy": 0.725,
+    "label_permutation_p_greater_equal": 9.999000099990002e-05,
+    "label_permutation_replicates": 10000,
+    "leave_one_probe_out": {
+      "paragraph_resegmentation": {
+        "cosine_accuracy": 0.4,
+        "euclidean_accuracy": 0.325,
+        "retained_probes": [
+          "punctuation_normalization",
+          "sentence_splitting"
+        ]
+      },
+      "punctuation_normalization": {
+        "cosine_accuracy": 0.725,
+        "euclidean_accuracy": 0.75,
+        "retained_probes": [
+          "sentence_splitting",
+          "paragraph_resegmentation"
+        ]
+      },
+      "sentence_splitting": {
+        "cosine_accuracy": 0.525,
+        "euclidean_accuracy": 0.65,
+        "retained_probes": [
+          "punctuation_normalization",
+          "paragraph_resegmentation"
+        ]
+      }
+    },
+    "per_corpus_accuracy": {
+      "asap_aes": 0.8,
+      "blog_authorship": 0.6,
+      "cnn_dailymail": 0.8,
+      "govreport": 0.8,
+      "gutenberg": 0.6,
+      "pmc": 1,
+      "stack_exchange": 0.8,
+      "wikitext_103": 0.6
+    },
+    "predictions": {
+      "asap_aes": {
+        "lastde__qwen2_5_0_5b_fp32": "lastde__qwen2_5_0_5b_fp32",
+        "logrank__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "lastde__qwen2_5_0_5b_fp32",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      },
+      "blog_authorship": {
+        "lastde__qwen2_5_0_5b_fp32": "openai_roberta_base__gpt2_legacy",
+        "logrank__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "mage_longformer__paper",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      },
+      "cnn_dailymail": {
+        "lastde__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "logrank__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "openai_roberta_base__gpt2_legacy",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      },
+      "govreport": {
+        "lastde__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "logrank__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "openai_roberta_base__gpt2_legacy",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      },
+      "gutenberg": {
+        "lastde__qwen2_5_0_5b_fp32": "openai_roberta_base__gpt2_legacy",
+        "logrank__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "logrank__qwen2_5_0_5b_fp32",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      },
+      "pmc": {
+        "lastde__qwen2_5_0_5b_fp32": "lastde__qwen2_5_0_5b_fp32",
+        "logrank__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "openai_roberta_base__gpt2_legacy",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      },
+      "stack_exchange": {
+        "lastde__qwen2_5_0_5b_fp32": "lastde__qwen2_5_0_5b_fp32",
+        "logrank__qwen2_5_0_5b_fp32": "lastde__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "openai_roberta_base__gpt2_legacy",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      },
+      "wikitext_103": {
+        "lastde__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "logrank__qwen2_5_0_5b_fp32": "logrank__qwen2_5_0_5b_fp32",
+        "mage_longformer__paper": "mage_longformer__paper",
+        "openai_roberta_base__gpt2_legacy": "radar_roberta_large__vicuna7b_training",
+        "radar_roberta_large__vicuna7b_training": "radar_roberta_large__vicuna7b_training"
+      }
+    },
+    "shared_backend_collapsed": {
+      "chance_accuracy": 0.25,
+      "cosine_accuracy": 0.875,
+      "euclidean_accuracy": 0.875,
+      "groups": [
+        "mage",
+        "openai_roberta",
+        "qwen25_shared",
+        "radar"
+      ]
+    }
+  },
+  "local_to_global_forecast_test": {
+    "mae": {
+      "100": {
+        "detector_id_x_text": 0.040701973849662926,
+        "main": 0.04246306882073226,
+        "main_minus_detector_id_x_text": 0.0017610949710693338
+      },
+      "250": {
+        "detector_id_x_text": 0.04046147493337544,
+        "main": 0.04216552604588604,
+        "main_minus_detector_id_x_text": 0.001704051112510603
+      }
+    },
+    "passed_preregistered_gate": false,
+    "sign_flip_p": 0.95703125,
+    "wins_over_detector_id": {
+      "100": 3,
+      "250": 3
+    }
+  },
+  "metamorphic_threshold_audit": {
+    "cells": [
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.035856573705179286
+          ],
+          "estimate": 0.014018691588785047
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.05976095617529881
+          ],
+          "estimate": 0.02336448598130841
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.029717821782178203
+          ],
+          "estimate": 0.009345794392523364
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.03515488414441125,
+            0.5438677830551609
+          ],
+          "estimate": 0.29166546046176806
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01694915254237288
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.042074483149249484
+          ],
+          "estimate": 0.014018691588785047
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03175235565673812
+          ],
+          "estimate": 0.009345794392523364
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.029282113057977618,
+            0.8009054753738086
+          ],
+          "estimate": 0.3703909722444053
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.011235955056179775
+          ],
+          "estimate": 0.0028089887640449437
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0350128205128205
+          ],
+          "estimate": 0.011235955056179775
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.025733974358974274
+          ],
+          "estimate": 0.008426966292134831
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.2827380103702265,
+            0.0657442168546526
+          ],
+          "estimate": -0.10855070928509315
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0028089887640449437
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03
+          ],
+          "estimate": 0.011235955056179775
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02247191011235955
+          ],
+          "estimate": 0.008426966292134831
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.19922269187829433,
+            0.2865811056340678
+          ],
+          "estimate": 0.042918869618619425
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.04046242774566474
+          ],
+          "estimate": 0.01675977653631285
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.04046242774566474
+          ],
+          "estimate": 0.01675977653631285
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 0.25,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.5711552310969044,
+            -0.2158485688226072
+          ],
+          "estimate": -0.4029230938277431
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.035
+          ],
+          "estimate": 0.013966480446927373
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.04291283240344901
+          ],
+          "estimate": 0.01675977653631285
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.010723860589812333
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.8991302865805654,
+            -0.4365799991032266
+          ],
+          "estimate": -0.6565504447041943
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.5386196794579745,
+            0.11675261796689486
+          ],
+          "estimate": -0.2938038797089548
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -1.047590976867123,
+            -0.3200604811958648
+          ],
+          "estimate": -0.6588650327740293
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0125
+          ],
+          "estimate": 0.005
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.3872329120635986,
+            0.07850558209419245
+          ],
+          "estimate": -0.15398105144500732
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0025,
+            0.025
+          ],
+          "estimate": 0.0125
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.005,
+            0.0325
+          ],
+          "estimate": 0.0175
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 0.375,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015
+          ],
+          "estimate": 0.005
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.4948971252441406,
+            0.07119308328628533
+          ],
+          "estimate": -0.21628579139709472
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -1.0665448506673176,
+            0.7730376065432368
+          ],
+          "estimate": 0.04133122762044271
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.2826903428350176,
+            2.176267322091494
+          ],
+          "estimate": 0.6769246419270833
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.01933654087175522,
+            -0.010128025017886469
+          ],
+          "estimate": -0.014137422075417171
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.026468626709312416,
+            -0.010358862485548787
+          ],
+          "estimate": -0.017509740202880396
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.021623816537073192,
+            -0.01298121851549754
+          ],
+          "estimate": -0.017185992216954056
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.008944930716277135,
+            0.005895654939283949
+          ],
+          "estimate": -0.0010234442533526458
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.027542188524680124,
+            -0.02152722008465687
+          ],
+          "estimate": -0.024341531787078766
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.05985676256042557,
+            -0.047513039408559866
+          ],
+          "estimate": -0.05364418749359252
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.018525336707448378,
+            -0.009820963006195787
+          ],
+          "estimate": -0.01225303149963795
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.03649067323724639,
+            -0.025616625301535606
+          ],
+          "estimate": -0.02990388240879131
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.042024163992137265,
+            -0.028467644556596405
+          ],
+          "estimate": -0.03482287841581154
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0493200997540773,
+            -0.02848280333774592
+          ],
+          "estimate": -0.03805627540158379
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.025543403535965327,
+            -0.007274007660297185
+          ],
+          "estimate": -0.014641735845468625
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.048722618720228095,
+            -0.0086320321439054
+          ],
+          "estimate": -0.0288763666412385
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.018691588785046728
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.018691588785046728
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0013595955519364099,
+            0.0028790842563774827
+          ],
+          "estimate": 0.000370110716252486
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.028860156833457794
+          ],
+          "estimate": 0.009345794392523364
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.028860156833457794
+          ],
+          "estimate": 0.009345794392523364
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.019300603979317717,
+            0.015614161701271804
+          ],
+          "estimate": -0.0023507196009946523
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -3.077657689664193e-05,
+            0.002516022865836702
+          ],
+          "estimate": 0.0006859517892418522
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.00020983703677600798,
+            0.07404470531726402
+          ],
+          "estimate": 0.030175797814536054
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.014450867052023121
+          ],
+          "estimate": 0.00558659217877095
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.014450867052023121
+          ],
+          "estimate": 0.00558659217877095
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.004573344010342632,
+            0.059494300065607804
+          ],
+          "estimate": 0.030459045235721793
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.010810810810810811
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.010810810810810811
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.06442533009122507,
+            0.18130763047881135
+          ],
+          "estimate": 0.12348276466235289
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.07161530504521808,
+            -0.008653418838266666
+          ],
+          "estimate": -0.031214684179703356
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03429556650246305
+          ],
+          "estimate": 0.015151515151515152
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03429556650246305
+          ],
+          "estimate": 0.015151515151515152
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.12873879791004045,
+            -0.04136795176702027
+          ],
+          "estimate": -0.0803599347302197
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            3.3980000523570202e-06,
+            0.03368618050736722
+          ],
+          "estimate": 0.012066147381578957
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            6.574903177352098e-07,
+            0.0887777866814415
+          ],
+          "estimate": 0.033366939959519185
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -7.003677092143334e-05,
+            5.395298752415454e-05
+          ],
+          "estimate": 1.5064153679607746e-05
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.00010457003091119077,
+            0.0005044774576530329
+          ],
+          "estimate": 0.0001685693982532636
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01698665066746659
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01698665066746659
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.00043840055194613455,
+            0.011935227981363511
+          ],
+          "estimate": 0.004997754690920603
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03571428571428571
+          ],
+          "estimate": 0.014018691588785047
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03571428571428571
+          ],
+          "estimate": 0.014018691588785047
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0006066978156280933,
+            0.023193801443891895
+          ],
+          "estimate": 0.010194085908509143
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.019662921348314606
+          ],
+          "estimate": 0.008426966292134831
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03089887640449438
+          ],
+          "estimate": 0.014044943820224719
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0175
+          ],
+          "estimate": 0.0056179775280898875
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.004732156955005615,
+            0.005905865045215144
+          ],
+          "estimate": 0.0005002201128008074
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0025,
+            0.025014044943820212
+          ],
+          "estimate": 0.011235955056179775
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0028089887640449437,
+            0.03089887640449438
+          ],
+          "estimate": 0.014044943820224719
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 0.25,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.011194029850746268
+          ],
+          "estimate": 0.0028089887640449437
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.009710070024464564,
+            0.00046471711871708766
+          ],
+          "estimate": -0.003832266778200198
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0225
+          ],
+          "estimate": 0.008379888268156424
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02680965147453083
+          ],
+          "estimate": 0.0111731843575419
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.012084592145015106
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.02360096519738292,
+            0.00021405898773926813
+          ],
+          "estimate": -0.010997421180173514
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.029490616621983913
+          ],
+          "estimate": 0.0111731843575419
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.036312849162011177
+          ],
+          "estimate": 0.013966480446927373
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.009146341463414634
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.03028278345643639,
+            -0.0032847250344569213
+          ],
+          "estimate": -0.014451954509886034
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.024881840796019895
+          ],
+          "estimate": 0.007575757575757576
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.024881840796019895
+          ],
+          "estimate": 0.007575757575757576
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.016486157221717535,
+            -0.0006128503509717125
+          ],
+          "estimate": -0.007655218527140802
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02459016393442623
+          ],
+          "estimate": 0.007575757575757576
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02459016393442623
+          ],
+          "estimate": 0.007575757575757576
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.035719259364872004,
+            -0.003415220135989825
+          ],
+          "estimate": -0.01823112168075926
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0425
+          ],
+          "estimate": 0.02
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 0.25,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0375
+          ],
+          "estimate": 0.0175
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.0028188456694078923,
+            0.02390831912856083
+          ],
+          "estimate": 0.012533108413845185
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015124999999999885
+          ],
+          "estimate": 0.005
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0125,
+            0.0676249999999999
+          ],
+          "estimate": 0.0375
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 0.03125,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.01,
+            0.0575
+          ],
+          "estimate": 0.0325
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.011142978654941545,
+            0.043869349040900486
+          ],
+          "estimate": 0.026285840220334648
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -1.722927637664335e-05,
+            0.0006968639963209473
+          ],
+          "estimate": 0.0002974751880780483
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -8.618409202711637e-06,
+            0.00029681619834346664
+          ],
+          "estimate": 0.00011042856009832272
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.016963763880771466
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.01096866096866097,
+            0.08411214953271028
+          ],
+          "estimate": 0.04672897196261682
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.25,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0076045627376425855,
+            0.0794392523364486
+          ],
+          "estimate": 0.04205607476635514
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.009797198885299532,
+            0.04415947028805302
+          ],
+          "estimate": 0.027450039888140265
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02824858757062147
+          ],
+          "estimate": 0.009345794392523364
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.017699115044247787,
+            0.1176969092721834
+          ],
+          "estimate": 0.06542056074766354
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.00883811412877632,
+            0.1111111111111111
+          ],
+          "estimate": 0.056074766355140186
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.011914125443465309,
+            0.06367879237963969
+          ],
+          "estimate": 0.038104654172278735
+        },
+        "n": 214,
+        "operating_point": "0.05",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02247191011235955
+          ],
+          "estimate": 0.008426966292134831
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.014044943820224719,
+            0.05
+          ],
+          "estimate": 0.03089887640449438
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.375,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0075,
+            0.041666666666666664
+          ],
+          "estimate": 0.02247191011235955
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.00391736070908573,
+            0.020276516683779663
+          ],
+          "estimate": 0.0124617883735441
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0025,
+            0.03651685393258427
+          ],
+          "estimate": 0.016853932584269662
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.016853932584269662,
+            0.0725
+          ],
+          "estimate": 0.042134831460674156
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.75,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.005,
+            0.0525
+          ],
+          "estimate": 0.025280898876404494
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0003449676201935188,
+            0.02347706394667217
+          ],
+          "estimate": 0.010111582645978988
+        },
+        "n": 356,
+        "operating_point": "0.05",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.02535211267605634,
+            0.09115281501340483
+          ],
+          "estimate": 0.05865921787709497
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.0625,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.02535211267605634,
+            0.09115281501340483
+          ],
+          "estimate": 0.05865921787709497
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.020183415786819148,
+            0.04652408751988993
+          ],
+          "estimate": 0.03306378297313954
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015835935113856166
+          ],
+          "estimate": 0.00558659217877095
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.06338001143137095,
+            0.23701601705040848
+          ],
+          "estimate": 0.13966480446927373
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.015625,
+        "holm_adjusted_directional_p": 0.921875,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.060126582278481014,
+            0.22788203753351208
+          ],
+          "estimate": 0.1340782122905028
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.05445223562670306,
+            0.13712822991750687
+          ],
+          "estimate": 0.09423500583500617
+        },
+        "n": 358,
+        "operating_point": "0.05",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.004716700640025463,
+            0.010135854729624777
+          ],
+          "estimate": -0.0005958271706759026
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02545124367158263
+          ],
+          "estimate": 0.007575757575757576
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.08026268522676236
+          ],
+          "estimate": 0.03787878787878788
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.25,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.06626506024096386
+          ],
+          "estimate": 0.030303030303030304
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.008930478905604269,
+            0.01728966141911145
+          ],
+          "estimate": 0.000664397583794639
+        },
+        "n": 132,
+        "operating_point": "0.05",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02
+          ],
+          "estimate": 0.0075
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0725,
+            0.1775
+          ],
+          "estimate": 0.125
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.015625,
+        "holm_adjusted_directional_p": 0.921875,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0675,
+            0.17
+          ],
+          "estimate": 0.1175
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.05581652377186401,
+            0.1485689310446905
+          ],
+          "estimate": 0.10000019390019588
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015
+          ],
+          "estimate": 0.005
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.1175,
+            0.27
+          ],
+          "estimate": 0.1925
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.0078125,
+        "holm_adjusted_directional_p": 0.46875,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.115,
+            0.265
+          ],
+          "estimate": 0.1875
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.08021483230640297,
+            0.19392483519934461
+          ],
+          "estimate": 0.13435379495989763
+        },
+        "n": 400,
+        "operating_point": "0.05",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0008894631219322257,
+            0.011305672486519648
+          ],
+          "estimate": 0.0037589271552860735
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.013285146513177703,
+            0.025558600512643654
+          ],
+          "estimate": -0.0007542074347535769
+        },
+        "n": 15,
+        "operating_point": "0.05",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015972775564408997
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02390438247011952
+          ],
+          "estimate": 0.009345794392523364
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.017699115044247787
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.0485577935737168,
+            0.5805945893858995
+          ],
+          "estimate": 0.29166546046176806
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.019011406844106463
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.019011406844106463
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.03855706047225784,
+            0.8267225393869188
+          ],
+          "estimate": 0.3703909722444053
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0028089887640449437
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0028089887640449437
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.29330975098556344,
+            0.07813363026768969
+          ],
+          "estimate": -0.10855070928509315
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.011196126111017942
+          ],
+          "estimate": 0.0028089887640449437
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.011196126111017942
+          ],
+          "estimate": 0.0028089887640449437
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.2033841361318316,
+            0.3162719898223876
+          ],
+          "estimate": 0.042918869618619425
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01038961038961039
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01038961038961039
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.5683087431175285,
+            -0.22871047185119978
+          ],
+          "estimate": -0.4029230938277431
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.010723860589812333
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.010723860589812333
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.9156821266022172,
+            -0.435641030817768
+          ],
+          "estimate": -0.6565504447041943
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.5384390503206442,
+            0.08230016713599629
+          ],
+          "estimate": -0.2938038797089548
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.9941715746722584,
+            -0.322790902122739
+          ],
+          "estimate": -0.6588650327740293
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.38809714484214786,
+            0.0739408388137817
+          ],
+          "estimate": -0.15398105144500732
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0175
+          ],
+          "estimate": 0.005
+        },
+        "corpora": 8,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.48571597909927366,
+            0.07092085123062125
+          ],
+          "estimate": -0.21628579139709472
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -1.0061164269080527,
+            0.706107305345081
+          ],
+          "estimate": 0.04133122762044271
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "lastde__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.21844522492224425,
+            2.0528010129928576
+          ],
+          "estimate": 0.6769246419270833
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.01941281767606574,
+            -0.010469245214776853
+          ],
+          "estimate": -0.014137422075417171
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.02676873724788092,
+            -0.010113963716681112
+          ],
+          "estimate": -0.017509740202880396
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.02194248674439475,
+            -0.013009827041655717
+          ],
+          "estimate": -0.017185992216954056
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.008796737395049919,
+            0.005682740458087968
+          ],
+          "estimate": -0.0010234442533526458
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01038961038961039
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01038961038961039
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.02759860473791999,
+            -0.021696008037433736
+          ],
+          "estimate": -0.024341531787078766
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015584415584415584
+          ],
+          "estimate": 0.00558659217877095
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015584415584415584
+          ],
+          "estimate": 0.00558659217877095
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.06033890660179092,
+            -0.04751337495818199
+          ],
+          "estimate": -0.05364418749359252
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.01851925336156553,
+            -0.009997672314333182
+          ],
+          "estimate": -0.01225303149963795
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.03589924961061359,
+            -0.02532353870666768
+          ],
+          "estimate": -0.02990388240879131
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.04195560684290505,
+            -0.028188673407667494
+          ],
+          "estimate": -0.03482287841581154
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.049160980987773495,
+            -0.02879448978955466
+          ],
+          "estimate": -0.03805627540158379
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.025082478872717473,
+            -0.0056913152664462225
+          ],
+          "estimate": -0.014641735845468625
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "logrank__qwen2_5_0_5b_fp32",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.048855626016531505,
+            -0.0086320321439054
+          ],
+          "estimate": -0.0288763666412385
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0014063308048875344,
+            0.002788970442916236
+          ],
+          "estimate": 0.000370110716252486
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.019888345945593005,
+            0.015993288386075593
+          ],
+          "estimate": -0.0023507196009946523
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -3.397571263230859e-05,
+            0.0023709887276652988
+          ],
+          "estimate": 0.0006859517892418522
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.0003612826075683722,
+            0.07272231164174832
+          ],
+          "estimate": 0.030175797814536054
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01038961038961039
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01038961038961039
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.003893051977187815,
+            0.05999856683190532
+          ],
+          "estimate": 0.030459045235721793
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.002793296089385475
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.06714394768603234,
+            0.1846396416633447
+          ],
+          "estimate": 0.12348276466235289
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.07374775835264566,
+            -0.00847353963133045
+          ],
+          "estimate": -0.031214684179703356
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.12544540043727734,
+            -0.043210515682464846
+          ],
+          "estimate": -0.0803599347302197
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            3.080388605440021e-06,
+            0.03387732897992509
+          ],
+          "estimate": 0.012066147381578957
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            2.7583667465478363e-06,
+            0.08731663150686607
+          ],
+          "estimate": 0.033366939959519185
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -7.006693646568843e-05,
+            5.1178929948036956e-05
+          ],
+          "estimate": 1.5064153679607746e-05
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "mage_longformer__paper",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.00010851093698306613,
+            0.0005522597059934505
+          ],
+          "estimate": 0.0001685693982532636
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.0004988855819595025,
+            0.011689124641698865
+          ],
+          "estimate": 0.004997754690920603
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0006680332211068739,
+            0.022115626098759972
+          ],
+          "estimate": 0.010194085908509143
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.00458170012129031,
+            0.005188215452595613
+          ],
+          "estimate": 0.0005002201128008074
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.009362232974899088,
+            0.000584014523503356
+          ],
+          "estimate": -0.003832266778200198
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.02420777781161944,
+            -0.00010661107836130548
+          ],
+          "estimate": -0.010997421180173514
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.028872195304428316,
+            -0.002839778347217698
+          ],
+          "estimate": -0.014451954509886034
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.017360415031199602,
+            -0.0006006117159595331
+          ],
+          "estimate": -0.007655218527140802
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.03613127416861987,
+            -0.003378087920541594
+          ],
+          "estimate": -0.01823112168075926
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.003077621418904528,
+            0.024433381274717246
+          ],
+          "estimate": 0.012533108413845185
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "corpora": 8,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.01113496718359602,
+            0.042715028096237805
+          ],
+          "estimate": 0.026285840220334648
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -1.6944694964747343e-05,
+            0.0007003785474066674
+          ],
+          "estimate": 0.0002974751880780483
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "openai_roberta_base__gpt2_legacy",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -9.241783118341118e-06,
+            0.00027561005518927565
+          ],
+          "estimate": 0.00011042856009832272
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.017241379310344827
+          ],
+          "estimate": 0.004672897196261682
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03849158653846151
+          ],
+          "estimate": 0.018691588785046728
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.75,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.034690703583632666
+          ],
+          "estimate": 0.014018691588785047
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.010210249805159003,
+            0.04360612830361891
+          ],
+          "estimate": 0.027450039888140265
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.023921284558734743
+          ],
+          "estimate": 0.009345794392523364
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.006040061633281973,
+            0.06333333333333334
+          ],
+          "estimate": 0.03271028037383177
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.04780876494023904
+          ],
+          "estimate": 0.02336448598130841
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.01228325494867532,
+            0.06266049833591707
+          ],
+          "estimate": 0.038104654172278735
+        },
+        "n": 214,
+        "operating_point": "0.01",
+        "probe": "contraction_expansion"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.004351146287642993,
+            0.021062281422809553
+          ],
+          "estimate": 0.0124617883735441
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015051282051282004
+          ],
+          "estimate": 0.0056179775280898875
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.5,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.015051282051282004
+          ],
+          "estimate": 0.0056179775280898875
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.00045761271472039255,
+            0.023454777016238704
+          ],
+          "estimate": 0.010111582645978988
+        },
+        "n": 356,
+        "operating_point": "0.01",
+        "probe": "punctuation_normalization"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.038968294275556835
+          ],
+          "estimate": 0.01675977653631285
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.25,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.038968294275556835
+          ],
+          "estimate": 0.01675977653631285
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.020633199763852177,
+            0.04705190668673243
+          ],
+          "estimate": 0.03306378297313954
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.012195121951219513,
+            0.08459214501510574
+          ],
+          "estimate": 0.0446927374301676
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.0625,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.012195121951219513,
+            0.08459214501510574
+          ],
+          "estimate": 0.0446927374301676
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.05353195316073037,
+            0.1365814569134448
+          ],
+          "estimate": 0.09423500583500617
+        },
+        "n": 358,
+        "operating_point": "0.01",
+        "probe": "sentence_splitting"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.004709419157987084,
+            0.009926541952881951
+          ],
+          "estimate": -0.0005958271706759026
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.02564102564102564
+          ],
+          "estimate": 0.007575757575757576
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.03390407010261731
+          ],
+          "estimate": 0.015151515151515152
+        },
+        "corpora": 6,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.024592182831300977
+          ],
+          "estimate": 0.007575757575757576
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.009050390154818774,
+            0.01744568143290297
+          ],
+          "estimate": 0.000664397583794639
+        },
+        "n": 132,
+        "operating_point": "0.01",
+        "probe": "discourse_markers"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.01
+          ],
+          "estimate": 0.0025
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.02,
+            0.115
+          ],
+          "estimate": 0.0625
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.1875,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0175,
+            0.1125
+          ],
+          "estimate": 0.06
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.05721046707450295,
+            0.15083331515523604
+          ],
+          "estimate": 0.10000019390019588
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0225
+          ],
+          "estimate": 0.01
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.03,
+            0.1325
+          ],
+          "estimate": 0.08
+        },
+        "corpora": 8,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 0.1875,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0225,
+            0.1225
+          ],
+          "estimate": 0.07
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            0.08068704116009759,
+            0.19191491864013369
+          ],
+          "estimate": 0.13435379495989763
+        },
+        "n": 400,
+        "operating_point": "0.01",
+        "probe": "paragraph_resegmentation"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "low",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.0010377849913323174,
+            0.011880805582872458
+          ],
+          "estimate": 0.0037589271552860735
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      },
+      {
+        "ai_to_human_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "any_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "corpora": 4,
+        "detector": "radar_roberta_large__vicuna7b_training",
+        "directional_corpus_sign_flip_p": 1.0,
+        "holm_adjusted_directional_p": 1.0,
+        "holm_reject_0.05": false,
+        "human_to_ai_flip_rate": {
+          "bootstrap_90_interval": [
+            0.0,
+            0.0
+          ],
+          "estimate": 0
+        },
+        "intensity": "high",
+        "mean_score_shift": {
+          "bootstrap_90_interval": [
+            -0.014070212224587089,
+            0.02590055553397784
+          ],
+          "estimate": -0.0007542074347535769
+        },
+        "n": 15,
+        "operating_point": "0.01",
+        "probe": "adjacent_repetition_removal"
+      }
+    ],
+    "hierarchical_bootstrap_replicates": 1000,
+    "raw_score_sensitivity": {
+      "cross_corpus_cosine_by_detector": {
+        "lastde__qwen2_5_0_5b_fp32": {
+          "maximum": 0.9942438780016686,
+          "mean": 0.5350771555692128,
+          "median": 0.6418475731354708,
+          "minimum": -0.4764387793513535,
+          "n": 28
+        },
+        "logrank__qwen2_5_0_5b_fp32": {
+          "maximum": 0.9926210926472586,
+          "mean": 0.9108053808343073,
+          "median": 0.9100112110461958,
+          "minimum": 0.7863525026408882,
+          "n": 28
+        },
+        "mage_longformer__paper": {
+          "maximum": 0.9999944926870439,
+          "mean": 0.8431030516231575,
+          "median": 0.9323297434550797,
+          "minimum": 0.6126418811167937,
+          "n": 28
+        },
+        "openai_roberta_base__gpt2_legacy": {
+          "maximum": 0.9946356631782481,
+          "mean": 0.41593205552196044,
+          "median": 0.47580462252131894,
+          "minimum": -0.8277460069058892,
+          "n": 28
+        },
+        "radar_roberta_large__vicuna7b_training": {
+          "maximum": 0.9925742378430803,
+          "mean": 0.8235317168836,
+          "median": 0.8686522351029231,
+          "minimum": 0.33046644628707755,
+          "n": 28
+        }
+      },
+      "leave_one_corpus_out_cosine_identification": 0.625,
+      "leave_one_corpus_out_euclidean_identification": 0.775,
+      "panel_complete_probes": [
+        "punctuation_normalization",
+        "sentence_splitting",
+        "paragraph_resegmentation"
+      ],
+      "slopes": {
+        "lastde__qwen2_5_0_5b_fp32:asap_aes:adjacent_repetition_removal": 0.35096476628230167,
+        "lastde__qwen2_5_0_5b_fp32:asap_aes:contraction_expansion": 0.36477827214450076,
+        "lastde__qwen2_5_0_5b_fp32:asap_aes:discourse_markers": -0.6219462955446172,
+        "lastde__qwen2_5_0_5b_fp32:asap_aes:paragraph_resegmentation": -0.012797426435830785,
+        "lastde__qwen2_5_0_5b_fp32:asap_aes:punctuation_normalization": -0.3559499454266477,
+        "lastde__qwen2_5_0_5b_fp32:asap_aes:sentence_splitting": -0.5175105320945373,
+        "lastde__qwen2_5_0_5b_fp32:blog_authorship:adjacent_repetition_removal": 0.1484246170311644,
+        "lastde__qwen2_5_0_5b_fp32:blog_authorship:contraction_expansion": 1.0820554032807812,
+        "lastde__qwen2_5_0_5b_fp32:blog_authorship:paragraph_resegmentation": 0.46251159565660244,
+        "lastde__qwen2_5_0_5b_fp32:blog_authorship:punctuation_normalization": 0.7281281221153799,
+        "lastde__qwen2_5_0_5b_fp32:blog_authorship:sentence_splitting": -0.1638281937042642,
+        "lastde__qwen2_5_0_5b_fp32:cnn_dailymail:adjacent_repetition_removal": 1.6287885393415176,
+        "lastde__qwen2_5_0_5b_fp32:cnn_dailymail:contraction_expansion": -0.01943776059523003,
+        "lastde__qwen2_5_0_5b_fp32:cnn_dailymail:paragraph_resegmentation": -0.7366916065975756,
+        "lastde__qwen2_5_0_5b_fp32:cnn_dailymail:punctuation_normalization": 0.10611456476675957,
+        "lastde__qwen2_5_0_5b_fp32:cnn_dailymail:sentence_splitting": -0.8368771370940785,
+        "lastde__qwen2_5_0_5b_fp32:govreport:contraction_expansion": 1.359984177809495,
+        "lastde__qwen2_5_0_5b_fp32:govreport:discourse_markers": -0.4317684123500914,
+        "lastde__qwen2_5_0_5b_fp32:govreport:paragraph_resegmentation": -0.7084957543737033,
+        "lastde__qwen2_5_0_5b_fp32:govreport:punctuation_normalization": -0.36255982650233015,
+        "lastde__qwen2_5_0_5b_fp32:govreport:sentence_splitting": -0.7750095578354174,
+        "lastde__qwen2_5_0_5b_fp32:gutenberg:contraction_expansion": -0.4645539316125689,
+        "lastde__qwen2_5_0_5b_fp32:gutenberg:discourse_markers": 0.6456257746769832,
+        "lastde__qwen2_5_0_5b_fp32:gutenberg:paragraph_resegmentation": -0.14662018074669728,
+        "lastde__qwen2_5_0_5b_fp32:gutenberg:punctuation_normalization": 0.24971207923422026,
+        "lastde__qwen2_5_0_5b_fp32:gutenberg:sentence_splitting": -0.38434641767102,
+        "lastde__qwen2_5_0_5b_fp32:pmc:discourse_markers": -1.17749480576918,
+        "lastde__qwen2_5_0_5b_fp32:pmc:paragraph_resegmentation": 0.09391913781853779,
+        "lastde__qwen2_5_0_5b_fp32:pmc:punctuation_normalization": -0.2875256935212752,
+        "lastde__qwen2_5_0_5b_fp32:pmc:sentence_splitting": -0.5827854330696123,
+        "lastde__qwen2_5_0_5b_fp32:stack_exchange:contraction_expansion": 0.05641830188404838,
+        "lastde__qwen2_5_0_5b_fp32:stack_exchange:discourse_markers": -1.2215102481455937,
+        "lastde__qwen2_5_0_5b_fp32:stack_exchange:paragraph_resegmentation": -0.06397133701204319,
+        "lastde__qwen2_5_0_5b_fp32:stack_exchange:punctuation_normalization": -0.010485670634818058,
+        "lastde__qwen2_5_0_5b_fp32:stack_exchange:sentence_splitting": -1.0517720577798184,
+        "lastde__qwen2_5_0_5b_fp32:wikitext_103:adjacent_repetition_removal": 2.2921617948091946,
+        "lastde__qwen2_5_0_5b_fp32:wikitext_103:discourse_markers": 2.2283254770132213,
+        "lastde__qwen2_5_0_5b_fp32:wikitext_103:paragraph_resegmentation": -0.4425539633778831,
+        "lastde__qwen2_5_0_5b_fp32:wikitext_103:punctuation_normalization": 0.09044247910111958,
+        "lastde__qwen2_5_0_5b_fp32:wikitext_103:sentence_splitting": -0.6247811192898064,
+        "logrank__qwen2_5_0_5b_fp32:asap_aes:adjacent_repetition_removal": 0.019215741656702957,
+        "logrank__qwen2_5_0_5b_fp32:asap_aes:contraction_expansion": -0.004316865863086717,
+        "logrank__qwen2_5_0_5b_fp32:asap_aes:discourse_markers": -0.02551771407404682,
+        "logrank__qwen2_5_0_5b_fp32:asap_aes:paragraph_resegmentation": -0.024386178643981075,
+        "logrank__qwen2_5_0_5b_fp32:asap_aes:punctuation_normalization": -0.009785744266530066,
+        "logrank__qwen2_5_0_5b_fp32:asap_aes:sentence_splitting": -0.04402205190444464,
+        "logrank__qwen2_5_0_5b_fp32:blog_authorship:adjacent_repetition_removal": -0.02737160414040221,
+        "logrank__qwen2_5_0_5b_fp32:blog_authorship:contraction_expansion": -0.018885686377279335,
+        "logrank__qwen2_5_0_5b_fp32:blog_authorship:paragraph_resegmentation": -0.025503258411376146,
+        "logrank__qwen2_5_0_5b_fp32:blog_authorship:punctuation_normalization": 0.012109948313321886,
+        "logrank__qwen2_5_0_5b_fp32:blog_authorship:sentence_splitting": -0.03605218075116492,
+        "logrank__qwen2_5_0_5b_fp32:cnn_dailymail:adjacent_repetition_removal": -0.061763189511348425,
+        "logrank__qwen2_5_0_5b_fp32:cnn_dailymail:contraction_expansion": -0.008879925710473935,
+        "logrank__qwen2_5_0_5b_fp32:cnn_dailymail:paragraph_resegmentation": -0.019518322947848533,
+        "logrank__qwen2_5_0_5b_fp32:cnn_dailymail:punctuation_normalization": 0.012085016663585432,
+        "logrank__qwen2_5_0_5b_fp32:cnn_dailymail:sentence_splitting": -0.053274560885434696,
+        "logrank__qwen2_5_0_5b_fp32:govreport:contraction_expansion": -0.008056548805902342,
+        "logrank__qwen2_5_0_5b_fp32:govreport:discourse_markers": -0.031842523367051845,
+        "logrank__qwen2_5_0_5b_fp32:govreport:paragraph_resegmentation": -0.015294238988502804,
+        "logrank__qwen2_5_0_5b_fp32:govreport:punctuation_normalization": -0.006736854175308612,
+        "logrank__qwen2_5_0_5b_fp32:govreport:sentence_splitting": -0.057400059733743035,
+        "logrank__qwen2_5_0_5b_fp32:gutenberg:contraction_expansion": -0.04972216962046614,
+        "logrank__qwen2_5_0_5b_fp32:gutenberg:discourse_markers": -0.03967442386653835,
+        "logrank__qwen2_5_0_5b_fp32:gutenberg:paragraph_resegmentation": -0.04524155706774216,
+        "logrank__qwen2_5_0_5b_fp32:gutenberg:punctuation_normalization": -0.020789582125452864,
+        "logrank__qwen2_5_0_5b_fp32:gutenberg:sentence_splitting": -0.0464386785730922,
+        "logrank__qwen2_5_0_5b_fp32:pmc:discourse_markers": -0.021379422327180275,
+        "logrank__qwen2_5_0_5b_fp32:pmc:paragraph_resegmentation": -0.02084429443422901,
+        "logrank__qwen2_5_0_5b_fp32:pmc:punctuation_normalization": -0.0008165856197458757,
+        "logrank__qwen2_5_0_5b_fp32:pmc:sentence_splitting": -0.051116759436140934,
+        "logrank__qwen2_5_0_5b_fp32:stack_exchange:contraction_expansion": -0.02078651229291219,
+        "logrank__qwen2_5_0_5b_fp32:stack_exchange:discourse_markers": -0.034238611629098914,
+        "logrank__qwen2_5_0_5b_fp32:stack_exchange:paragraph_resegmentation": -0.03520000541196051,
+        "logrank__qwen2_5_0_5b_fp32:stack_exchange:punctuation_normalization": 0.01885970684975296,
+        "logrank__qwen2_5_0_5b_fp32:stack_exchange:sentence_splitting": -0.0689150709432566,
+        "logrank__qwen2_5_0_5b_fp32:wikitext_103:adjacent_repetition_removal": -0.04593138078166858,
+        "logrank__qwen2_5_0_5b_fp32:wikitext_103:discourse_markers": -0.06803091417697485,
+        "logrank__qwen2_5_0_5b_fp32:wikitext_103:paragraph_resegmentation": -0.06910082769510954,
+        "logrank__qwen2_5_0_5b_fp32:wikitext_103:punctuation_normalization": 0.009867373858762296,
+        "logrank__qwen2_5_0_5b_fp32:wikitext_103:sentence_splitting": -0.056725382870427624,
+        "mage_longformer__paper:asap_aes:adjacent_repetition_removal": -1.5812856313109827e-05,
+        "mage_longformer__paper:asap_aes:contraction_expansion": 0.020178192863899828,
+        "mage_longformer__paper:asap_aes:discourse_markers": -0.07525447216940903,
+        "mage_longformer__paper:asap_aes:paragraph_resegmentation": 2.3955672356980642e-06,
+        "mage_longformer__paper:asap_aes:punctuation_normalization": 0.0011880620934133065,
+        "mage_longformer__paper:asap_aes:sentence_splitting": 0.14072856574438425,
+        "mage_longformer__paper:blog_authorship:adjacent_repetition_removal": 0.00029803660233290545,
+        "mage_longformer__paper:blog_authorship:contraction_expansion": -0.019984443285806754,
+        "mage_longformer__paper:blog_authorship:paragraph_resegmentation": 7.561889145356755e-07,
+        "mage_longformer__paper:blog_authorship:punctuation_normalization": 0.0211116718666884,
+        "mage_longformer__paper:blog_authorship:sentence_splitting": 0.016583402618082718,
+        "mage_longformer__paper:cnn_dailymail:adjacent_repetition_removal": -1.5492950166974736e-05,
+        "mage_longformer__paper:cnn_dailymail:contraction_expansion": -0.012872089449716092,
+        "mage_longformer__paper:cnn_dailymail:paragraph_resegmentation": 0.0,
+        "mage_longformer__paper:cnn_dailymail:punctuation_normalization": -1.276978784097502e-06,
+        "mage_longformer__paper:cnn_dailymail:sentence_splitting": 0.024926091285941164,
+        "mage_longformer__paper:govreport:contraction_expansion": 0.0001899853456192292,
+        "mage_longformer__paper:govreport:discourse_markers": -0.06581741619608836,
+        "mage_longformer__paper:govreport:paragraph_resegmentation": -9.276315928467258e-05,
+        "mage_longformer__paper:govreport:punctuation_normalization": 0.0005304023723441436,
+        "mage_longformer__paper:govreport:sentence_splitting": 0.1647468730422839,
+        "mage_longformer__paper:gutenberg:contraction_expansion": 0.00016562522384442404,
+        "mage_longformer__paper:gutenberg:discourse_markers": -6.732104296903484e-05,
+        "mage_longformer__paper:gutenberg:paragraph_resegmentation": 0.24461451200473264,
+        "mage_longformer__paper:gutenberg:punctuation_normalization": 0.18506190468035696,
+        "mage_longformer__paper:gutenberg:sentence_splitting": 0.2815528129491929,
+        "mage_longformer__paper:pmc:discourse_markers": -0.11359415431280237,
+        "mage_longformer__paper:pmc:paragraph_resegmentation": 0.000567164462067136,
+        "mage_longformer__paper:pmc:punctuation_normalization": 2.6017228399990757e-06,
+        "mage_longformer__paper:pmc:sentence_splitting": 0.1250328362693082,
+        "mage_longformer__paper:stack_exchange:contraction_expansion": 0.0013613057040634923,
+        "mage_longformer__paper:stack_exchange:discourse_markers": -0.10844920109092147,
+        "mage_longformer__paper:stack_exchange:paragraph_resegmentation": 1.0000284162021526e-07,
+        "mage_longformer__paper:stack_exchange:punctuation_normalization": 0.02122462307121631,
+        "mage_longformer__paper:stack_exchange:sentence_splitting": 0.056531192029359904,
+        "mage_longformer__paper:wikitext_103:adjacent_repetition_removal": 1.1460351509949528e-06,
+        "mage_longformer__paper:wikitext_103:discourse_markers": -7.967307017399714e-05,
+        "mage_longformer__paper:wikitext_103:paragraph_resegmentation": 0.02008687706661741,
+        "mage_longformer__paper:wikitext_103:punctuation_normalization": 0.0,
+        "mage_longformer__paper:wikitext_103:sentence_splitting": 0.15560604445537776,
+        "openai_roberta_base__gpt2_legacy:asap_aes:adjacent_repetition_removal": 3.383376707251256e-05,
+        "openai_roberta_base__gpt2_legacy:asap_aes:contraction_expansion": 0.005277993045134567,
+        "openai_roberta_base__gpt2_legacy:asap_aes:discourse_markers": -0.005079959912453588,
+        "openai_roberta_base__gpt2_legacy:asap_aes:paragraph_resegmentation": 0.02315177517840311,
+        "openai_roberta_base__gpt2_legacy:asap_aes:punctuation_normalization": -0.05058730736460261,
+        "openai_roberta_base__gpt2_legacy:asap_aes:sentence_splitting": -0.009202113447347553,
+        "openai_roberta_base__gpt2_legacy:blog_authorship:adjacent_repetition_removal": 0.00012465360535553698,
+        "openai_roberta_base__gpt2_legacy:blog_authorship:contraction_expansion": 0.023939616254624464,
+        "openai_roberta_base__gpt2_legacy:blog_authorship:paragraph_resegmentation": 0.06071057139508607,
+        "openai_roberta_base__gpt2_legacy:blog_authorship:punctuation_normalization": -0.0041899823256515405,
+        "openai_roberta_base__gpt2_legacy:blog_authorship:sentence_splitting": -0.0006228572247514073,
+        "openai_roberta_base__gpt2_legacy:cnn_dailymail:adjacent_repetition_removal": -1.786973111198415e-06,
+        "openai_roberta_base__gpt2_legacy:cnn_dailymail:contraction_expansion": -0.0006703869148523884,
+        "openai_roberta_base__gpt2_legacy:cnn_dailymail:paragraph_resegmentation": 0.010564610386981471,
+        "openai_roberta_base__gpt2_legacy:cnn_dailymail:punctuation_normalization": -0.001497621509911682,
+        "openai_roberta_base__gpt2_legacy:cnn_dailymail:sentence_splitting": -0.019173689464152946,
+        "openai_roberta_base__gpt2_legacy:govreport:contraction_expansion": 2.4505044656017653e-06,
+        "openai_roberta_base__gpt2_legacy:govreport:discourse_markers": -0.03721600912101934,
+        "openai_roberta_base__gpt2_legacy:govreport:paragraph_resegmentation": 0.05119218941168313,
+        "openai_roberta_base__gpt2_legacy:govreport:punctuation_normalization": -0.006359804198009563,
+        "openai_roberta_base__gpt2_legacy:govreport:sentence_splitting": -0.03974839905250795,
+        "openai_roberta_base__gpt2_legacy:gutenberg:contraction_expansion": -0.007647351611244402,
+        "openai_roberta_base__gpt2_legacy:gutenberg:discourse_markers": 7.795393825150453e-06,
+        "openai_roberta_base__gpt2_legacy:gutenberg:paragraph_resegmentation": 0.002160219614024399,
+        "openai_roberta_base__gpt2_legacy:gutenberg:punctuation_normalization": 0.003489960363205278,
+        "openai_roberta_base__gpt2_legacy:gutenberg:sentence_splitting": -0.0006977156676648605,
+        "openai_roberta_base__gpt2_legacy:pmc:discourse_markers": -0.012443691227362622,
+        "openai_roberta_base__gpt2_legacy:pmc:paragraph_resegmentation": 0.026799111570534283,
+        "openai_roberta_base__gpt2_legacy:pmc:punctuation_normalization": -0.008723106814386646,
+        "openai_roberta_base__gpt2_legacy:pmc:sentence_splitting": -0.008879167975341865,
+        "openai_roberta_base__gpt2_legacy:stack_exchange:contraction_expansion": 0.014957267908067728,
+        "openai_roberta_base__gpt2_legacy:stack_exchange:discourse_markers": -0.002890905915561472,
+        "openai_roberta_base__gpt2_legacy:stack_exchange:paragraph_resegmentation": 0.026639357853805824,
+        "openai_roberta_base__gpt2_legacy:stack_exchange:punctuation_normalization": -0.002892780871575529,
+        "openai_roberta_base__gpt2_legacy:stack_exchange:sentence_splitting": -0.025441451074233238,
+        "openai_roberta_base__gpt2_legacy:wikitext_103:adjacent_repetition_removal": -9.198000696368324e-06,
+        "openai_roberta_base__gpt2_legacy:wikitext_103:discourse_markers": 2.599690140833935e-05,
+        "openai_roberta_base__gpt2_legacy:wikitext_103:paragraph_resegmentation": -1.6863876364371955e-05,
+        "openai_roberta_base__gpt2_legacy:wikitext_103:punctuation_normalization": -0.004206952807826004,
+        "openai_roberta_base__gpt2_legacy:wikitext_103:sentence_splitting": 0.0020758878890637864,
+        "radar_roberta_large__vicuna7b_training:asap_aes:adjacent_repetition_removal": -0.000247281331282395,
+        "radar_roberta_large__vicuna7b_training:asap_aes:contraction_expansion": 0.031197925265059694,
+        "radar_roberta_large__vicuna7b_training:asap_aes:discourse_markers": -0.01081877557533869,
+        "radar_roberta_large__vicuna7b_training:asap_aes:paragraph_resegmentation": 0.19491594550929237,
+        "radar_roberta_large__vicuna7b_training:asap_aes:punctuation_normalization": 0.006351462891930362,
+        "radar_roberta_large__vicuna7b_training:asap_aes:sentence_splitting": 0.11035809744971424,
+        "radar_roberta_large__vicuna7b_training:blog_authorship:adjacent_repetition_removal": -0.01172078592812511,
+        "radar_roberta_large__vicuna7b_training:blog_authorship:contraction_expansion": 0.06629225933859055,
+        "radar_roberta_large__vicuna7b_training:blog_authorship:paragraph_resegmentation": 0.2301287728481273,
+        "radar_roberta_large__vicuna7b_training:blog_authorship:punctuation_normalization": -0.0013309041725397784,
+        "radar_roberta_large__vicuna7b_training:blog_authorship:sentence_splitting": 0.027053859638970747,
+        "radar_roberta_large__vicuna7b_training:cnn_dailymail:adjacent_repetition_removal": 0.00019983704467969277,
+        "radar_roberta_large__vicuna7b_training:cnn_dailymail:contraction_expansion": 0.0012256322925513904,
+        "radar_roberta_large__vicuna7b_training:cnn_dailymail:paragraph_resegmentation": 0.014363322754341636,
+        "radar_roberta_large__vicuna7b_training:cnn_dailymail:punctuation_normalization": -0.0014483291158137882,
+        "radar_roberta_large__vicuna7b_training:cnn_dailymail:sentence_splitting": 0.06431209407824126,
+        "radar_roberta_large__vicuna7b_training:govreport:contraction_expansion": 0.0070583086747389575,
+        "radar_roberta_large__vicuna7b_training:govreport:discourse_markers": 0.0049514684558185145,
+        "radar_roberta_large__vicuna7b_training:govreport:paragraph_resegmentation": 0.1322190396673818,
+        "radar_roberta_large__vicuna7b_training:govreport:punctuation_normalization": 0.0029710816101977044,
+        "radar_roberta_large__vicuna7b_training:govreport:sentence_splitting": 0.20195471158407374,
+        "radar_roberta_large__vicuna7b_training:gutenberg:contraction_expansion": 0.007516262537376357,
+        "radar_roberta_large__vicuna7b_training:gutenberg:discourse_markers": -0.0046687515882345345,
+        "radar_roberta_large__vicuna7b_training:gutenberg:paragraph_resegmentation": 0.022496606875900545,
+        "radar_roberta_large__vicuna7b_training:gutenberg:punctuation_normalization": 0.015922744568679807,
+        "radar_roberta_large__vicuna7b_training:gutenberg:sentence_splitting": 0.016645927909272617,
+        "radar_roberta_large__vicuna7b_training:pmc:discourse_markers": 0.009534780226073843,
+        "radar_roberta_large__vicuna7b_training:pmc:paragraph_resegmentation": 0.061769437347310975,
+        "radar_roberta_large__vicuna7b_training:pmc:punctuation_normalization": 0.004921654709695568,
+        "radar_roberta_large__vicuna7b_training:pmc:sentence_splitting": 0.12470898845569889,
+        "radar_roberta_large__vicuna7b_training:stack_exchange:contraction_expansion": 0.046784792925937325,
+        "radar_roberta_large__vicuna7b_training:stack_exchange:discourse_markers": 0.015587619523418497,
+        "radar_roberta_large__vicuna7b_training:stack_exchange:paragraph_resegmentation": 0.2214762090525999,
+        "radar_roberta_large__vicuna7b_training:stack_exchange:punctuation_normalization": 0.04494891236388416,
+        "radar_roberta_large__vicuna7b_training:stack_exchange:sentence_splitting": 0.15924017651100303,
+        "radar_roberta_large__vicuna7b_training:wikitext_103:adjacent_repetition_removal": 0.025473601160905298,
+        "radar_roberta_large__vicuna7b_training:wikitext_103:discourse_markers": 0.013128591056626577,
+        "radar_roberta_large__vicuna7b_training:wikitext_103:paragraph_resegmentation": 0.06933050903595499,
+        "radar_roberta_large__vicuna7b_training:wikitext_103:punctuation_normalization": -0.011654099536794558,
+        "radar_roberta_large__vicuna7b_training:wikitext_103:sentence_splitting": 0.04991723784103213
+      }
+    },
+    "selected_triplets": 1475
+  },
+  "panel_complete_probes": [
+    "punctuation_normalization",
+    "sentence_splitting",
+    "paragraph_resegmentation"
+  ],
+  "probe_coverage": {
+    "adjacent_repetition_removal": 20,
+    "contraction_expansion": 30,
+    "discourse_markers": 30,
+    "paragraph_resegmentation": 40,
+    "punctuation_normalization": 40,
+    "sentence_splitting": 40
+  },
+  "probe_order": [
+    "contraction_expansion",
+    "punctuation_normalization",
+    "sentence_splitting",
+    "discourse_markers",
+    "paragraph_resegmentation",
+    "adjacent_repetition_removal"
+  ],
+  "profile_distance_vs_fpr_distance": {
+    "0.01": {
+      "by_detector": {
+        "lastde__qwen2_5_0_5b_fp32": -0.36179138302295133,
+        "logrank__qwen2_5_0_5b_fp32": -0.15701421002528468,
+        "mage_longformer__paper": -0.05064330876861275,
+        "openai_roberta_base__gpt2_legacy": 0.3300466740058823,
+        "radar_roberta_large__vicuna7b_training": -0.2298850574712644
+      },
+      "corpus_label_permutation_p_two_sided": 0.36076392360763926,
+      "corpus_label_permutation_replicates": 10000,
+      "detector_fixed_effect_spearman": -0.09366283695467065,
+      "mean_by_detector_spearman": -0.09385745705644617,
+      "naive_pooled_spearman_profile_distance_vs_fpr_distance": 0.345283330262721,
+      "pairs": 140
+    },
+    "0.05": {
+      "by_detector": {
+        "lastde__qwen2_5_0_5b_fp32": -0.2425071871621964,
+        "logrank__qwen2_5_0_5b_fp32": -0.0739017387514594,
+        "mage_longformer__paper": -0.06787082649151616,
+        "openai_roberta_base__gpt2_legacy": 0.2271483305966065,
+        "radar_roberta_large__vicuna7b_training": 0.2627257799671593
+      },
+      "corpus_label_permutation_p_two_sided": 0.8127187281271873,
+      "corpus_label_permutation_replicates": 10000,
+      "detector_fixed_effect_spearman": 0.021128687972974226,
+      "mean_by_detector_spearman": 0.021118871631718765,
+      "naive_pooled_spearman_profile_distance_vs_fpr_distance": 0.3954555295311567,
+      "pairs": 140
+    }
+  },
+  "research_construct": "local_response_geometry_to_global_false_positive_tail_risk",
+  "schema_version": 1,
+  "split_half_reliability": {
+    "lastde__qwen2_5_0_5b_fp32": {
+      "available_probes": 6,
+      "overall_mean_split_half_cosine": 0.412413276030065,
+      "probes": {
+        "adjacent_repetition_removal": {
+          "included_corpora": 3,
+          "mean_absolute_difference": 0.0456108268998563,
+          "pairs": 100,
+          "sign_agreement": 0.32,
+          "status": "available"
+        },
+        "contraction_expansion": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.008694226095664908,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "discourse_markers": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.018198095320258498,
+          "pairs": 100,
+          "sign_agreement": 0.83,
+          "status": "available"
+        },
+        "paragraph_resegmentation": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.008055066441380966,
+          "pairs": 100,
+          "sign_agreement": 0.9,
+          "status": "available"
+        },
+        "punctuation_normalization": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.00920894589975371,
+          "pairs": 100,
+          "sign_agreement": 0.57,
+          "status": "available"
+        },
+        "sentence_splitting": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.008525455712985746,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        }
+      },
+      "valid_pairs": 100
+    },
+    "logrank__qwen2_5_0_5b_fp32": {
+      "available_probes": 6,
+      "overall_mean_split_half_cosine": 0.9926601937859437,
+      "probes": {
+        "adjacent_repetition_removal": {
+          "included_corpora": 3,
+          "mean_absolute_difference": 0.003750636135652119,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "contraction_expansion": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.001661071918911386,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "discourse_markers": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.00467554286232034,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "paragraph_resegmentation": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.0020400937428307567,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "punctuation_normalization": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.0012937552470001909,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "sentence_splitting": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.0016902634183611912,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        }
+      },
+      "valid_pairs": 100
+    },
+    "mage_longformer__paper": {
+      "available_probes": 6,
+      "overall_mean_split_half_cosine": 0.9588282837445327,
+      "probes": {
+        "adjacent_repetition_removal": {
+          "included_corpora": 3,
+          "mean_absolute_difference": 0.02470745854436777,
+          "pairs": 100,
+          "sign_agreement": 0.95,
+          "status": "available"
+        },
+        "contraction_expansion": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.002600756334295424,
+          "pairs": 100,
+          "sign_agreement": 0.96,
+          "status": "available"
+        },
+        "discourse_markers": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.00857444223238466,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "paragraph_resegmentation": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 4.416607336031454e-34,
+          "pairs": 100,
+          "sign_agreement": 0.26,
+          "status": "available"
+        },
+        "punctuation_normalization": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.0010726417587103177,
+          "pairs": 100,
+          "sign_agreement": 0.53,
+          "status": "available"
+        },
+        "sentence_splitting": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.007228979415705083,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        }
+      },
+      "valid_pairs": 100
+    },
+    "openai_roberta_base__gpt2_legacy": {
+      "available_probes": 6,
+      "overall_mean_split_half_cosine": 0.19881686062193363,
+      "probes": {
+        "adjacent_repetition_removal": {
+          "included_corpora": 3,
+          "mean_absolute_difference": 0.1122004675266491,
+          "pairs": 100,
+          "sign_agreement": 0.35,
+          "status": "available"
+        },
+        "contraction_expansion": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.006371642335211659,
+          "pairs": 100,
+          "sign_agreement": 0.74,
+          "status": "available"
+        },
+        "discourse_markers": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.020789946874634938,
+          "pairs": 100,
+          "sign_agreement": 0.98,
+          "status": "available"
+        },
+        "paragraph_resegmentation": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.010935695131807685,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "punctuation_normalization": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.008732917360342703,
+          "pairs": 100,
+          "sign_agreement": 0.64,
+          "status": "available"
+        },
+        "sentence_splitting": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.010891691320562622,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        }
+      },
+      "valid_pairs": 100
+    },
+    "radar_roberta_large__vicuna7b_training": {
+      "available_probes": 6,
+      "overall_mean_split_half_cosine": 0.9927227821600202,
+      "probes": {
+        "adjacent_repetition_removal": {
+          "included_corpora": 3,
+          "mean_absolute_difference": 0.011012505641244156,
+          "pairs": 100,
+          "sign_agreement": 0.66,
+          "status": "available"
+        },
+        "contraction_expansion": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.0015466500452800385,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "discourse_markers": {
+          "included_corpora": 5,
+          "mean_absolute_difference": 0.0062767781003167065,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "paragraph_resegmentation": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.010852321031937567,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "punctuation_normalization": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.0030392240408583385,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        },
+        "sentence_splitting": {
+          "included_corpora": 8,
+          "mean_absolute_difference": 0.011117489637787085,
+          "pairs": 100,
+          "sign_agreement": 1.0,
+          "status": "available"
+        }
+      },
+      "valid_pairs": 100
+    }
+  }
+}

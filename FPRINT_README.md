@@ -73,6 +73,11 @@ F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint score-target `
 
 F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint evaluate `
   --rows locked-forecast-evaluation.csv --output evaluation.json
+
+F:\Research\FPRINT\.venv\Scripts\python.exe -m fprint analyze-fingerprint-geometry `
+  --storage-root F:\Research\FPRINT-storage-grouped-final `
+  --evaluation F:\Research\FPRINT-storage-grouped-final\results\final\final_evaluation.json `
+  --output-dir outputs\fingerprint_geometry
 ```
 
 `prepare` performs global exact and five-word-shingle near-deduplication before
