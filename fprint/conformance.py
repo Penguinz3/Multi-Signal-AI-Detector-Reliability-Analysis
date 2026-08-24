@@ -720,12 +720,14 @@ def score_fault_audit(
     completed = skipped = rejected = 0
     try:
         for row in rows:
-            existing = audit.execute(
-                """SELECT COUNT(*) FROM audit_scores WHERE triplet_id=?
+            existing_rows = audit.execute(
+                """SELECT failure,truncated FROM audit_scores WHERE triplet_id=?
                    AND audited_endpoint=? AND fault_id=?""",
                 (row["triplet_id"], endpoint, fault_id),
-            ).fetchone()[0]
-            if existing == 3:
+            ).fetchall()
+            if len(existing_rows) == 3 and all(
+                item["failure"] is None or bool(item["truncated"]) for item in existing_rows
+            ):
                 skipped += 3
                 continue
             transformation_mode = fault.mode if fault.stage == "pre_inference" else "identity"
@@ -748,10 +750,12 @@ def score_fault_audit(
                     _insert_score(audit, row["triplet_id"], level, endpoint, fault_id, effective, payload)
                 continue
             for level, text in texts.items():
-                if audit.execute(
-                    "SELECT 1 FROM audit_scores WHERE triplet_id=? AND intensity=? AND audited_endpoint=? AND fault_id=?",
+                existing_level = audit.execute(
+                    """SELECT failure,truncated FROM audit_scores
+                        WHERE triplet_id=? AND intensity=? AND audited_endpoint=? AND fault_id=?""",
                     (row["triplet_id"], level, endpoint, fault_id),
-                ).fetchone():
+                ).fetchone()
+                if existing_level and (existing_level["failure"] is None or bool(existing_level["truncated"])):
                     skipped += 1
                     continue
                 if fault.mode != "mean_logprob" and text == str(row[f"{level}_text"]):
@@ -780,6 +784,10 @@ def score_fault_audit(
                     try:
                         payload = _score_payload(adapter, text, fault.mode, audit)
                     except Exception as error:
+                        if "CUDA error" in str(error) or "AcceleratorError" in type(error).__name__:
+                            raise RuntimeError(
+                                "Accelerator failure aborted the process before additional rows could be poisoned; rerun resumes."
+                            ) from error
                         payload = {
                             "native_score": None, "canonical_ai_score": None,
                             "input_token_count": counts[level], "effective_token_count": 0,
@@ -930,7 +938,8 @@ def fault_audit_readiness(audit_root: Path) -> dict:
                 expected = effective_count * 3
                 observed = connection.execute(
                     """SELECT COUNT(*) FROM audit_scores s JOIN audit_triplets t USING(triplet_id)
-                        WHERE t.source_kind=? AND s.audited_endpoint=? AND s.fault_id=?""",
+                        WHERE t.source_kind=? AND s.audited_endpoint=? AND s.fault_id=?
+                          AND (s.failure IS NULL OR s.truncated=1)""",
                     (source_kind, endpoint, fault_id),
                 ).fetchone()[0]
                 if observed != expected:

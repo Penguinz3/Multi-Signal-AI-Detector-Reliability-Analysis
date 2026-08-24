@@ -8,11 +8,12 @@ from unittest.mock import patch
 
 from fprint.conformance import (
     FaultSpec, _cached_token_sequence, _connect, _digest, _draw_triplets,
-    _evaluate_channel, _feature_vector, _paired_reference_changes,
+    _evaluate_channel, _feature_vector, _insert_score, _paired_reference_changes,
     _summarize_predictions, audit_paths, import_score_table, remap_percentile,
     score_fault_audit, transform_input,
 )
 from fprint.core import lock_forecasts, verify_lock
+from fprint.detectors import ScoreRecord
 
 
 ENDPOINT = "radar_roberta_large__vicuna7b_training"
@@ -25,6 +26,21 @@ def fault(fault_id, family, stage, mode, parameters=None):
 class _RejectingAdapter:
     def token_count(self, text):
         return 999
+
+
+class _WorkingAdapter:
+    def token_count(self, text):
+        return 3
+
+    def score(self, text):
+        return ScoreRecord(
+            detector_config=ENDPOINT, method_family="test", dependency_group="test",
+            model_id="test", model_revision="test", tokenizer_revision="test",
+            quantization="none", dtype="float32", device_map="cpu",
+            input_token_count=3, effective_token_count=3, max_tokens=512,
+            truncated=False, native_score=.2, canonical_ai_score=.2,
+            runtime_ms=1.0, failure=None, text_hash="test",
+        )
 
 
 class _SequenceScorer:
@@ -171,6 +187,31 @@ class ConformanceStorageTests(unittest.TestCase):
             self.assertTrue(all(row["truncated"] == 1 for row in rows))
             self.assertTrue(all(row["failure"] == "full_triplet_rejected_capacity" for row in rows))
             self.assertTrue(all(row["audited_endpoint"] == ENDPOINT and row["fault_id"] == "input" for row in rows))
+
+    def test_failed_nontruncated_rows_are_retried(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            paths = self._locked_root(Path(temporary))
+            connection = _connect(paths.database)
+            for level in ("original", "low", "high"):
+                _insert_score(connection, "t", level, ENDPOINT, "input", ENDPOINT, {
+                    "native_score": None if level == "original" else .1,
+                    "canonical_ai_score": None if level == "original" else .1,
+                    "input_token_count": 3, "effective_token_count": 0 if level == "original" else 3,
+                    "max_tokens": 512, "truncated": False, "runtime_ms": 1,
+                    "failure": "CUDA error" if level == "original" else None,
+                })
+            connection.close()
+            with patch("fprint.conformance.build_adapter", return_value=_WorkingAdapter()):
+                result = score_fault_audit(paths.root, ENDPOINT, "input")
+            self.assertEqual(result["completed"], 1)
+            self.assertEqual(result["skipped"], 2)
+            connection = _connect(paths.database)
+            rows = connection.execute(
+                "SELECT failure,canonical_ai_score FROM audit_scores ORDER BY intensity"
+            ).fetchall()
+            connection.close()
+            self.assertTrue(all(row["failure"] is None for row in rows))
+            self.assertTrue(all(row["canonical_ai_score"] is not None for row in rows))
 
     def test_lock_tampering_and_unlocked_score_rows_are_refused(self):
         with tempfile.TemporaryDirectory() as temporary:
