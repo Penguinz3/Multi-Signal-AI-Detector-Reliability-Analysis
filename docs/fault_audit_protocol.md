@@ -55,7 +55,7 @@ python -m fprint.cli evaluate-fault-audit `
   --audit-root F:\Research\FPRINT-fault-audit
 ```
 
-The evaluator produces raw unperturbed-score summaries, monotone-resistant within-run rank geometry, and their combination. For every held-out corpus it recomputes scaling, unchanged centroids, the 5% alarm threshold, family centroids, and distance/margin abstention rules using training corpora only. Family centroids also exclude the tested fault variant. Draws are group-aware at budgets 10, 25, and 50.
+The evaluator produces raw unperturbed-score summaries, monotone-resistant within-run rank geometry, and their combination. Every current-run vector is first differenced from the unchanged score vector for the exact same locked texts; otherwise corpus identity is confounded with behavioral change. For every held-out corpus it recomputes scaling, unchanged-change centroids, the 5% alarm threshold, family centroids, and distance/margin abstention rules using training corpora only. Family centroids also exclude the tested fault variant. Draws are group-aware at budgets 10, 25, and 50.
 
 Each machine-readable prediction is `unchanged`, `changed`, or `inconclusive` and includes its alarm distance, training threshold, likely coarse family, per-probe contributions, raw-score change, and `revalidation_required`. Combined multi-fault cases are successful only when rejected or marked inconclusive.
 

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from fprint.conformance import (
     FaultSpec, _cached_token_sequence, _connect, _digest, _draw_triplets,
-    _evaluate_channel, _feature_vector,
+    _evaluate_channel, _feature_vector, _paired_reference_changes,
     _summarize_predictions, audit_paths, import_score_table, remap_percentile,
     score_fault_audit, transform_input,
 )
@@ -88,6 +88,22 @@ class ConformanceUnitTests(unittest.TestCase):
         calibration = fault("cal", "output_policy", "post_score", "temperature", {"temperature": .8})
         values = [remap_percentile(value, calibration) for value in (.1, .3, .7, .9)]
         self.assertEqual(values, sorted(values))
+
+    def test_conformance_features_are_paired_to_the_same_text_reference(self):
+        common = {
+            "source_kind": "discovery", "corpus": "c", "budget": 10,
+            "draw": 0, "endpoint": ENDPOINT, "group_ids": ["g"],
+        }
+        rows = [
+            {**common, "fault_id": "unchanged", "family": "unchanged",
+             "features": {"raw_mean": .4, "probe__p__slope": .2}, "native_original_mean": .7},
+            {**common, "fault_id": "fault", "family": "input_handling",
+             "features": {"raw_mean": .6, "probe__p__slope": -.1}, "native_original_mean": .8},
+        ]
+        paired = _paired_reference_changes(rows)
+        self.assertEqual(paired[0]["features"], {"raw_mean": 0.0, "probe__p__slope": 0.0})
+        self.assertAlmostEqual(paired[1]["features"]["raw_mean"], .2)
+        self.assertAlmostEqual(paired[1]["features"]["probe__p__slope"], -.3)
 
     def test_compact_qwen_sequence_cache_is_persistent(self):
         with tempfile.TemporaryDirectory() as temporary:

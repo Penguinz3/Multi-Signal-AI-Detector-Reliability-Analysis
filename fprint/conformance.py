@@ -1193,6 +1193,30 @@ def _make_observations(
     return observations
 
 
+def _paired_reference_changes(observations: Sequence[Mapping[str, object]]) -> list[dict]:
+    references = {
+        (row["source_kind"], row["corpus"], row["budget"], row["draw"], row["endpoint"]): row
+        for row in observations if row["family"] == "unchanged"
+    }
+    paired = []
+    for row in observations:
+        key = (row["source_kind"], row["corpus"], row["budget"], row["draw"], row["endpoint"])
+        reference = references.get(key)
+        if reference is None:
+            raise RuntimeError(f"Observation lacks its locked same-text unchanged reference: {key}")
+        copied = dict(row)
+        copied["features"] = {
+            name: float(row["features"][name]) - float(reference["features"][name])
+            for name in row["features"]
+        }
+        copied["native_original_mean"] = (
+            float(row["native_original_mean"]) - float(reference["native_original_mean"])
+        )
+        copied["representation"] = "paired_change_from_same_text_locked_reference"
+        paired.append(copied)
+    return paired
+
+
 def _feature_names(observations: Sequence[Mapping[str, object]], channel: str) -> list[str]:
     names = sorted({name for row in observations for name in row["features"]})  # type: ignore[index]
     if channel == "raw":
@@ -1283,9 +1307,6 @@ def _evaluate_channel(
                     "alarm_threshold": _quantile([
                         _distance(vector, reference) for vector in unchanged_vectors
                     ], .95),
-                    "native_reference": _mean([
-                        float(row["native_original_mean"]) for row in unchanged
-                    ]),
                 }
             known_train = [
                 row for row in train
@@ -1377,7 +1398,7 @@ def _evaluate_channel(
                     "alarm_threshold": alarm_threshold, "nearest_family_distance": nearest,
                     "maximum_accepted_family_distance": max_family_distance,
                     "nearest_second_margin": margin, "minimum_accepted_margin": min_margin,
-                    "raw_score_change": float(candidate["native_original_mean"]) - float(endpoint_model["native_reference"]),
+                    "raw_score_change": float(candidate["features"].get("raw_mean", 0.0)),
                     "per_probe_contributions": [row for row in contributions if row["feature"].startswith("probe__")],
                     "revalidation_required": status != "unchanged",
                     "group_ids": candidate["group_ids"],
@@ -1543,11 +1564,13 @@ def evaluate_fault_audit(audit_root: Path, output_dir: Path | None = None) -> di
     faults = {row["fault_id"]: FaultSpec.from_mapping(row) for row in manifest["faults"]}
     triplets, scores = _load_audit_state(paths)
     references = _reference_distributions(manifest)
-    discovery = _make_observations(triplets, scores, references, faults, config, "discovery")
-    confirmation = _make_observations(
+    discovery = _paired_reference_changes(_make_observations(
+        triplets, scores, references, faults, config, "discovery"
+    ))
+    confirmation = _paired_reference_changes(_make_observations(
         triplets, scores, references, faults, config, "confirmation_candidate",
         _confirmation_panel(paths),
-    )
+    ))
     if not discovery:
         raise RuntimeError("No complete discovery observations; run score-fault-audit for required inference faults")
     predictions = []
@@ -1557,6 +1580,7 @@ def evaluate_fault_audit(audit_root: Path, output_dir: Path | None = None) -> di
     report = {
         "schema_version": 1,
         "construct": manifest["construct"],
+        "feature_representation": "paired change from the same texts under the locked unchanged endpoint",
         "manifest_lock_sha256": _file_digest(paths.lock),
         "discovery_observations": len(discovery),
         "confirmation_observations": len(confirmation),
