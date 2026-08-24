@@ -200,15 +200,59 @@ def _readonly(path: Path) -> sqlite3.Connection:
     return connection
 
 
-def _verify_audit_database(paths: AuditPaths, manifest: Mapping[str, object]) -> None:
-    local_files = {
+def _local_code_files() -> dict[str, Path]:
+    return {
         "conformance.py": Path(__file__),
         "core.py": Path(__file__).with_name("core.py"),
         "detectors.py": Path(__file__).with_name("detectors.py"),
         "fault_audit_config.json": Path(__file__).resolve().parents[1] / "fault_audit_config.json",
     }
-    for name, expected in manifest.get("code_sha256", {}).items():
-        path = local_files.get(str(name))
+
+
+def _effective_code_digests(paths: AuditPaths, manifest: Mapping[str, object]) -> dict[str, str]:
+    expected = {str(name): str(value) for name, value in manifest.get("code_sha256", {}).items()}
+    amendment_root = paths.root / "locks" / "amendments"
+    for amendment_path in sorted(amendment_root.glob("amendment_*.json")) if amendment_root.is_dir() else ():
+        payload = verify_lock(amendment_path)["payload"]
+        if payload.get("parent_manifest_sha256") != _file_digest(paths.lock):
+            raise RuntimeError(f"Code amendment has the wrong parent manifest: {amendment_path}")
+        if payload.get("previous_code_sha256") != expected:
+            raise RuntimeError(f"Code amendment chain is broken: {amendment_path}")
+        expected = {str(name): str(value) for name, value in payload["new_code_sha256"].items()}
+    return expected
+
+
+def lock_code_amendment(audit_root: Path, reason: str, scope: Sequence[str]) -> Path:
+    paths = audit_paths(audit_root)
+    manifest = verify_lock(paths.lock)["payload"]
+    previous = _effective_code_digests(paths, manifest)
+    local_files = _local_code_files()
+    current = {name: _file_digest(local_files[name]) for name in previous}
+    changed = sorted(name for name in previous if previous[name] != current[name])
+    if changed != sorted(scope):
+        raise RuntimeError(f"Amendment scope {sorted(scope)} does not match changed locked files {changed}")
+    if not reason.strip():
+        raise ValueError("A protocol amendment requires a reason")
+    amendment_root = paths.root / "locks" / "amendments"
+    index = len(list(amendment_root.glob("amendment_*.json"))) + 1 if amendment_root.is_dir() else 1
+    destination = amendment_root / f"amendment_{index:03d}.json"
+    lock_forecasts(destination, {
+        "schema_version": 1,
+        "parent_manifest_sha256": _file_digest(paths.lock),
+        "previous_code_sha256": previous,
+        "new_code_sha256": current,
+        "changed_files": changed,
+        "code_commit": _git_commit(Path(__file__).resolve().parents[1]),
+        "reason": reason.strip(),
+        "effect_on_existing_outputs": "none; amendment locked before the affected stage produced rows",
+    })
+    return destination
+
+
+def _verify_audit_database(paths: AuditPaths, manifest: Mapping[str, object]) -> None:
+    local_files = _local_code_files()
+    for name, expected in _effective_code_digests(paths, manifest).items():
+        path = local_files.get(name)
         if path is None or not path.is_file() or _file_digest(path) != expected:
             raise RuntimeError(f"Current audit code/config disagrees with locked digest: {name}")
     connection = _readonly(paths.database)
@@ -684,8 +728,9 @@ def score_fault_audit(
             if existing == 3:
                 skipped += 3
                 continue
+            transformation_mode = fault.mode if fault.stage == "pre_inference" else "identity"
             texts = {
-                level: transform_input(fault.mode, str(row[f"{level}_text"]))
+                level: transform_input(transformation_mode, str(row[f"{level}_text"]))
                 for level in ("original", "low", "high")
             }
             capacity = min(SPECS[adapter_endpoint].max_tokens - 32, 460)
@@ -1549,6 +1594,10 @@ def evaluate_fault_audit(audit_root: Path, output_dir: Path | None = None) -> di
             "A fault is an observable departure from reference behavior. This report does not "
             "estimate deployment false-positive rates or identify exact proprietary internals."
         ),
+        "code_amendments": [
+            verify_lock(path)["payload"]
+            for path in sorted((paths.root / "locks" / "amendments").glob("amendment_*.json"))
+        ] if (paths.root / "locks" / "amendments").is_dir() else [],
     }
     destination = Path(output_dir).resolve() if output_dir else paths.results
     destination.mkdir(parents=True, exist_ok=True)

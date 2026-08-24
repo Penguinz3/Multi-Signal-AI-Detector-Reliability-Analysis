@@ -23,6 +23,8 @@ An independent confirmation panel is formed prospectively from 50 unused paragra
 
 The source root is opened by SQLite in read-only mode. The fault audit writes only to a separate root. Preparation creates a challenge database and an exclusive SHA-256 lock; later stages verify the lock and refuse unlocked triplets, endpoints, or fault IDs. Existing scores are copied with their provenance and a frozen-row digest. A changed lock envelope is a hard failure.
 
+If a fail-closed implementation defect is found after locking, the original manifest is never replaced. A numbered SHA-256 amendment must bind the parent lock, previous and new code digests, exact changed files, commit, reason, and effect on existing outputs. Scoring remains blocked until the digest chain verifies.
+
 Example:
 
 ```powershell
