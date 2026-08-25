@@ -128,6 +128,63 @@ python -m unittest discover -s tests -v
 The frozen numerical design is in `fprint_config.json`. Core safeguards and
 their runnable checks are in `fprint/` and `tests/test_fprint.py`.
 
+## Selective-deferral pilot
+
+The repository also contains an isolated, prospectively locked pilot asking a
+narrower question: among passages that RADAR already accuses, do its signed
+responses to three character-preserving reflow transformations help rank human
+false accusations above correctly accused AI passages?
+
+This lane uses `F:\Research\FPRINT-selective-deferral` by convention and does
+not modify the completed forecast or fault-audit artifacts. RADAR is the sole
+fingerprint endpoint. MAGE is an expected-invariance preprocessing control, and
+LogRank supplies an original-score disagreement baseline only. The code imports
+AI outputs generated under locked requests; it does not call a model provider.
+
+The pilot protocol and its pre-outcome feasibility correction are frozen in
+`docs/selective_deferral_pilot_protocol.md`; numerical settings and gates are in
+`deferral_config.json`. No final scoring stage exists. A final protocol can be
+locked only after the pilot passes, and detector-general claims additionally
+require a newly locked whitespace-sensitive learned endpoint.
+
+The provider-neutral workflow is:
+
+```powershell
+python -m fprint prepare-deferral-pilot --records human_candidates.csv `
+  --study-root F:\Research\FPRINT-selective-deferral `
+  --topic-map source_topics.json --generation-spec generation_spec.json `
+  --human-token-counts human_token_counts.json
+
+python -m fprint import-deferral-ai-panel `
+  --study-root F:\Research\FPRINT-selective-deferral `
+  --outputs generated_outputs.csv
+
+python -m fprint validate-deferral-probes `
+  --study-root F:\Research\FPRINT-selective-deferral --probe wrap_80 `
+  --text-table locked_pilot_texts.csv
+
+python -m fprint calibrate-deferral-thresholds `
+  --study-root F:\Research\FPRINT-selective-deferral `
+  --score-table calibration_scores.csv
+
+python -m fprint score-deferral-originals `
+  --study-root F:\Research\FPRINT-selective-deferral `
+  --score-table pilot_original_scores.csv
+
+python -m fprint score-deferral-positives `
+  --study-root F:\Research\FPRINT-selective-deferral `
+  --score-table completed_conditional_scores.csv
+
+python -m fprint evaluate-deferral-pilot `
+  --study-root F:\Research\FPRINT-selective-deferral `
+  --text-table locked_pilot_texts.csv
+```
+
+Run the validation command once per probe to export blank judgments, then again
+with `--judgments` to lock the completed audit. Canonical score tables let the
+same analyzer consume local, hosted, or later commercial detector outputs; all
+rows are checked against locked text hashes and immutable detector revisions.
+
 ---
 
 # Legacy Multi-Signal AI-Detector Reliability Analysis

@@ -11,7 +11,7 @@ from statistics import median
 from .core import (
     PROBES, STUDY_CORPORA, TARGET_CORPORA, StudyDB, TextRecord,
     assign_grouped_partitions, deduplicate, grouping_key,
-    make_probe_triplet, storage_root,
+    lock_forecasts, make_probe_triplet, storage_root, verify_lock,
 )
 from .detectors import SPECS, build_adapter, validate_labeled_pilot, validate_specs
 from .conformance import (
@@ -27,6 +27,15 @@ from .workflow import (
     assert_all_target_locks, assert_target_score_allowed, build_threshold_artifact,
     fold_paths, initialize_fold, mark_signature_scored, mark_test_scored,
 )
+from .deferral import (
+    ENDPOINT_ROLES, PROBES as DEFERRAL_PROBES, DeferralPaths,
+    assemble_evaluation_rows, authorize_final_stage, build_conditional_worklist,
+    build_reflow_variants, calibrate_radar_threshold, export_manual_audit,
+    import_canonical_scores, import_generation_outputs, import_manual_audit,
+    lock_human_token_panels, prepare_generation_requests, prepare_pilot_manifest,
+    read_canonical_scores, validate_mage_effective_input_hashes,
+)
+from .deferral_evaluation import evaluate_pilot as evaluate_deferral_rows
 
 
 def _parse_corpus(value: str) -> tuple[str, Path]:
@@ -432,6 +441,216 @@ def evaluate_conformance(args: argparse.Namespace) -> None:
     )
 
 
+def _json_payload(path: Path) -> object:
+    with path.open(encoding="utf-8-sig") as handle:
+        return json.load(handle)
+
+
+def _rows_payload(path: Path) -> list[dict[str, object]]:
+    if path.suffix.casefold() == ".csv":
+        with path.open(encoding="utf-8-sig", newline="") as handle:
+            return list(csv.DictReader(handle))
+    payload = _json_payload(path)
+    if isinstance(payload, dict):
+        payload = payload.get("rows", payload.get("outputs", payload.get("records")))
+    if not isinstance(payload, list):
+        raise ValueError(f"Expected a JSON row list or CSV: {path}")
+    return [dict(row) for row in payload]
+
+
+def _file_digest(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _protocol_binding_path(paths: DeferralPaths) -> Path:
+    return paths.root / "locks" / "protocol_binding.json"
+
+
+def _protocol_binding(paths: DeferralPaths, config: Path) -> dict[str, object]:
+    files = {
+        "config": config.resolve(),
+        "deferral": Path(__file__).with_name("deferral.py").resolve(),
+        "deferral_evaluation": Path(__file__).with_name("deferral_evaluation.py").resolve(),
+        "core": Path(__file__).with_name("core.py").resolve(),
+        "detectors": Path(__file__).with_name("detectors.py").resolve(),
+    }
+    return {
+        "stage": "selective_deferral_protocol_binding",
+        "pilot_lock_sha256": verify_lock(paths.lock)["sha256"],
+        "files": {name: {"path": str(path), "sha256": _file_digest(path)} for name, path in files.items()},
+    }
+
+
+def _verify_deferral_protocol(paths: DeferralPaths) -> dict[str, object]:
+    binding_path = _protocol_binding_path(paths)
+    if not binding_path.exists():
+        raise RuntimeError("Selective-deferral protocol binding is missing")
+    envelope = verify_lock(binding_path)
+    payload = envelope["payload"]
+    if payload.get("pilot_lock_sha256") != verify_lock(paths.lock)["sha256"]:
+        raise RuntimeError("Protocol binding references a different pilot lock")
+    for row in payload.get("files", {}).values():
+        path = Path(row["path"])
+        if not path.exists() or _file_digest(path) != row["sha256"]:
+            raise RuntimeError(f"Protocol-bound file changed: {path}")
+    return envelope
+
+
+def prepare_deferral(args: argparse.Namespace) -> None:
+    config = _json_payload(args.config)
+    if not isinstance(config, dict) or config.get("study_stage") != "pilot_only":
+        raise ValueError("Deferral config must declare study_stage=pilot_only")
+    paths = DeferralPaths.from_root(args.study_root)
+    token_counts = _json_payload(args.human_token_counts)
+    if not isinstance(token_counts, dict):
+        raise ValueError("Human token counts must be a record-keyed JSON object")
+    manifest = prepare_pilot_manifest(
+        args.records, paths,
+        calibration_cap=int(config["calibration"]["human_groups_total"]),
+        pilot_cap=int(config["pilot"]["human_groups_total"]),
+        seed=int(config["seed"]),
+        endpoint_revisions={endpoint: SPECS[endpoint].revision for endpoint in ENDPOINT_ROLES},
+        candidate_token_counts=token_counts,
+        token_cap=int(config["common_token_ceiling"]),
+    )
+    selected_ids = {str(row["record_id"]) for row in manifest["pilot"]}
+    lock_human_token_panels(
+        paths, {record_id: counts for record_id, counts in token_counts.items() if record_id in selected_ids},
+        cap=int(config["common_token_ceiling"]),
+    )
+    generation = _json_payload(args.generation_spec)
+    topics = _json_payload(args.topic_map)
+    if not isinstance(generation, dict) or not isinstance(topics, dict):
+        raise ValueError("Generation specification and topic map must be JSON objects")
+    requests = prepare_generation_requests(
+        paths, topics,
+        generator_families=generation.get("generator_families"),
+        prompt_template=str(generation.get("prompt_template", "")),
+        decoding=generation.get("decoding"),
+        seed=int(generation.get("seed", config["seed"])),
+        retry=int(generation.get("retry", 0)),
+        target_length=int(generation["target_length"]),
+    )
+    binding_path = _protocol_binding_path(paths)
+    lock_forecasts(binding_path, _protocol_binding(paths, args.config))
+    print(f"Locked {len(manifest['calibration'])} calibration humans, {len(manifest['pilot'])} pilot humans, and {len(requests)} AI requests.")
+
+
+def import_deferral_panel(args: argparse.Namespace) -> None:
+    paths = DeferralPaths.from_root(args.study_root)
+    _verify_deferral_protocol(paths)
+    token_counts = _json_payload(args.token_counts) if args.token_counts else None
+    panels = import_generation_outputs(paths, args.outputs, token_counts=token_counts, token_cap=460)
+    print(f"Locked {len(panels)} AI panels.")
+
+
+def validate_deferral(args: argparse.Namespace) -> None:
+    paths = DeferralPaths.from_root(args.study_root)
+    _verify_deferral_protocol(paths)
+    if args.judgments:
+        result = import_manual_audit(paths, args.judgments, probe=args.probe, count=args.count, minimum_valid=args.minimum_valid)
+        print(f"Locked {args.probe} manual validation: {result['valid']}/{result['count']} valid.")
+    else:
+        if not args.text_table:
+            raise ValueError("--text-table is required when exporting manual-audit examples")
+        rows = export_manual_audit(paths, probe=args.probe, count=args.count, texts=args.text_table)
+        print(f"Exported {len(rows)} {args.probe} audit rows to {paths.manual_audit_csv_for(args.probe)}")
+
+
+def calibrate_deferral(args: argparse.Namespace) -> None:
+    paths = DeferralPaths.from_root(args.study_root)
+    _verify_deferral_protocol(paths)
+    payload = calibrate_radar_threshold(paths, read_canonical_scores(args.score_table))
+    print(f"Locked RADAR 5% threshold at {payload['threshold']:.12g} from {payload['reference_count']} humans.")
+
+
+def score_deferral_originals(args: argparse.Namespace) -> None:
+    paths = DeferralPaths.from_root(args.study_root)
+    _verify_deferral_protocol(paths)
+    imported = import_canonical_scores(args.score_table, paths)
+    threshold = verify_lock(paths.threshold_lock)["payload"]["threshold"]
+    originals = {
+        (row.record_id, row.endpoint): row
+        for row in imported
+        if row.variant_id == "original" and row.endpoint == "radar_roberta_large__vicuna7b_training"
+    }
+    work = build_conditional_worklist(
+        paths, originals,
+        thresholds={"radar_roberta_large__vicuna7b_training": float(threshold)},
+        sentinel_per_corpus_label=25,
+    )
+    print(f"Imported {len(imported)} score rows and wrote {len(work)} conditional scoring requests to {paths.worklist}.")
+
+
+def score_deferral_positives(args: argparse.Namespace) -> None:
+    paths = DeferralPaths.from_root(args.study_root)
+    _verify_deferral_protocol(paths)
+    rows = import_canonical_scores(args.score_table, paths)
+    print(f"Canonical score cache now contains {len(rows)} rows.")
+
+
+def evaluate_deferral(args: argparse.Namespace) -> None:
+    paths = DeferralPaths.from_root(args.study_root)
+    protocol = _verify_deferral_protocol(paths)
+    text_rows = _rows_payload(args.text_table)
+    rows = assemble_evaluation_rows(paths, text_rows)
+    manual = []
+    for probe in DEFERRAL_PROBES:
+        lock = paths.manual_audit_lock_for(probe)
+        if not lock.exists():
+            raise RuntimeError(f"Manual audit lock is missing for {probe}")
+        item = verify_lock(lock)["payload"]
+        if item.get("count") != 300 or item.get("minimum_valid") != 297:
+            raise RuntimeError(f"Manual audit policy mismatch for {probe}")
+        manual.append(item)
+    mage_invariant = True
+    for row in rows:
+        text = str(row["text"])
+        variants = {variant.variant_id: variant.text for variant in build_reflow_variants(text)}
+        validate_mage_effective_input_hashes(text, variants)
+    validation = {
+        "manual_gate": all(item["valid"] >= item["minimum_valid"] for item in manual),
+        "automated_gate": True,
+        "mage_gate": mage_invariant,
+    }
+    output_dir = args.output_dir or paths.results
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report_path = output_dir / "pilot_evaluation.json"
+    report = evaluate_deferral_rows(
+        rows, validation_summary=validation,
+        bootstrap_replicates=10000,
+        seed=20260824, output_path=report_path,
+    )
+    gate_payload = {
+        "stage": "selective_deferral_pilot_gate",
+        "protocol_binding_sha256": protocol["sha256"],
+        "report_sha256": _file_digest(report_path),
+        "passed": bool(report["gates"]["passed"]),
+        "failures": report["gates"]["failures"],
+    }
+    lock_forecasts(paths.root / "locks" / "pilot_gate.json", gate_payload)
+    print(f"Pilot evaluated: passed={gate_payload['passed']}; report={report_path}")
+
+
+def lock_deferral_final(args: argparse.Namespace) -> None:
+    paths = DeferralPaths.from_root(args.study_root)
+    _verify_deferral_protocol(paths)
+    gate = verify_lock(paths.root / "locks" / "pilot_gate.json")["payload"]
+    if gate.get("passed") is not True:
+        raise RuntimeError("Final protocol cannot lock because the pilot did not pass")
+    digest = authorize_final_stage(paths, {
+        "status": "pilot_passed", "passed": True,
+        "pilot_gate_sha256": verify_lock(paths.root / "locks" / "pilot_gate.json")["sha256"],
+        "radar_specific_protocol_sha256": _file_digest(args.protocol),
+        "detector_general_claim_blocked": True,
+    })
+    print(f"Locked RADAR-specific final protocol authorization: {digest}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="fprint", description="Fixed-threshold detector FPR forecasting")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -521,6 +740,72 @@ def build_parser() -> argparse.ArgumentParser:
     fault_evaluate.add_argument("--audit-root", type=Path, required=True)
     fault_evaluate.add_argument("--output-dir", type=Path)
     fault_evaluate.set_defaults(func=evaluate_conformance)
+    deferral_prepare = sub.add_parser(
+        "prepare-deferral-pilot",
+        help="Select, validate, and lock the isolated human/AI deferral pilot",
+    )
+    deferral_prepare.add_argument("--records", type=Path, required=True, help="Canonical human CSV")
+    deferral_prepare.add_argument("--study-root", type=Path, required=True)
+    deferral_prepare.add_argument("--config", type=Path, default=Path("deferral_config.json"))
+    deferral_prepare.add_argument("--topic-map", type=Path, required=True)
+    deferral_prepare.add_argument("--generation-spec", type=Path, required=True)
+    deferral_prepare.add_argument("--human-token-counts", type=Path, required=True)
+    deferral_prepare.set_defaults(func=prepare_deferral)
+    deferral_import = sub.add_parser(
+        "import-deferral-ai-panel",
+        help="Import outputs matching the locked provider-neutral generation requests",
+    )
+    deferral_import.add_argument("--study-root", type=Path, required=True)
+    deferral_import.add_argument("--outputs", type=Path, required=True)
+    deferral_import.add_argument("--token-counts", type=Path)
+    deferral_import.set_defaults(func=import_deferral_panel)
+    deferral_validate = sub.add_parser(
+        "validate-deferral-probes",
+        help="Export or lock one preregistered manual probe audit",
+    )
+    deferral_validate.add_argument("--study-root", type=Path, required=True)
+    deferral_validate.add_argument("--probe", choices=DEFERRAL_PROBES, required=True)
+    deferral_validate.add_argument("--judgments", type=Path)
+    deferral_validate.add_argument("--text-table", type=Path)
+    deferral_validate.add_argument("--count", type=int, default=300)
+    deferral_validate.add_argument("--minimum-valid", type=int, default=297)
+    deferral_validate.set_defaults(func=validate_deferral)
+    deferral_calibrate = sub.add_parser(
+        "calibrate-deferral-thresholds",
+        help="Lock the RADAR 5%% threshold from exactly 2,000 calibration humans",
+    )
+    deferral_calibrate.add_argument("--study-root", type=Path, required=True)
+    deferral_calibrate.add_argument("--score-table", type=Path, required=True)
+    deferral_calibrate.set_defaults(func=calibrate_deferral)
+    deferral_originals = sub.add_parser(
+        "score-deferral-originals",
+        help="Import original RADAR scores and emit the conditional positive-only worklist",
+    )
+    deferral_originals.add_argument("--study-root", type=Path, required=True)
+    deferral_originals.add_argument("--score-table", type=Path, required=True)
+    deferral_originals.set_defaults(func=score_deferral_originals)
+    deferral_positives = sub.add_parser(
+        "score-deferral-positives",
+        help="Import completed RADAR reflow, MAGE, LogRank, and sentinel scores",
+    )
+    deferral_positives.add_argument("--study-root", type=Path, required=True)
+    deferral_positives.add_argument("--score-table", type=Path, required=True)
+    deferral_positives.set_defaults(func=score_deferral_positives)
+    deferral_evaluate = sub.add_parser(
+        "evaluate-deferral-pilot",
+        help="Run frozen leave-one-corpus-out triage evaluation and lock its gate",
+    )
+    deferral_evaluate.add_argument("--study-root", type=Path, required=True)
+    deferral_evaluate.add_argument("--text-table", type=Path, required=True)
+    deferral_evaluate.add_argument("--output-dir", type=Path)
+    deferral_evaluate.set_defaults(func=evaluate_deferral)
+    deferral_final = sub.add_parser(
+        "lock-deferral-final",
+        help="After a passed pilot, lock a RADAR-specific final protocol without scoring it",
+    )
+    deferral_final.add_argument("--study-root", type=Path, required=True)
+    deferral_final.add_argument("--protocol", type=Path, required=True)
+    deferral_final.set_defaults(func=lock_deferral_final)
     return parser
 
 
