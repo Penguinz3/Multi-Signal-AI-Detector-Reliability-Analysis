@@ -130,6 +130,7 @@ class DeferralWorklistTests(unittest.TestCase):
                 for record_id in ("pilot-0", "pilot-1")
             }
             scores[("pilot-0", RADAR_ENDPOINT)] = 0.9
+            lock_forecasts(paths.threshold_lock, {"threshold": .5})
             worklist = build_conditional_worklist(
                 paths, scores, thresholds={endpoint: 0.5 for endpoint in endpoints},
             )
@@ -182,7 +183,7 @@ class DeferralGenerationTests(unittest.TestCase):
             requests = prepare_generation_requests(
                 paths, {"pilot-0": "topic zero", "pilot-1": "topic one"},
                 generator_families=(("a", "ra"), ("b", "rb"), ("c", "rc")),
-                seed=7, target_length=50,
+                seed=7, target_length=25,
             )
             self.assertEqual(len(requests), 2)
             self.assertTrue(paths.generation_lock.exists())
@@ -198,8 +199,12 @@ class DeferralGenerationTests(unittest.TestCase):
                 }
                 for request in requests
             ]
+            with self.assertRaisesRegex(ValueError, "length tolerance"):
+                import_generation_outputs(paths, [dict(row, text="Too short.") for row in rows])
             panels = import_generation_outputs(paths, rows)
             self.assertEqual(len(panels), 2)
+            self.assertTrue(all(panel["output_word_count"] for panel in panels))
+            lock_forecasts(paths.threshold_lock, {"threshold": .5})
             original_scores = {
                 (record_id, RADAR_ENDPOINT): .9
                 for record_id in (
@@ -213,7 +218,6 @@ class DeferralGenerationTests(unittest.TestCase):
             self.assertEqual(sum(row["endpoint"] == RADAR_ENDPOINT and row["variant_id"] in PROBES for row in work), 12)
             self.assertEqual(sum(row["endpoint"] == MAGE_ENDPOINT for row in work), 4)
             self.assertEqual(sum(row["endpoint"] == LOGRANK_ENDPOINT for row in work), 4)
-            lock_forecasts(paths.threshold_lock, {"threshold": .5})
             manifest = verify_pilot_lock(paths)["payload"]
             hashes = {
                 row["record_id"]: {

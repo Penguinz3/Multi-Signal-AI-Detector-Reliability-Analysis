@@ -34,6 +34,7 @@ from .deferral import (
     import_canonical_scores, import_generation_outputs, import_manual_audit,
     lock_human_token_panels, prepare_generation_requests, prepare_pilot_manifest,
     read_canonical_scores, validate_mage_effective_input_hashes,
+    verify_conditional_worklist,
 )
 from .deferral_evaluation import evaluate_pilot as evaluate_deferral_rows
 
@@ -470,13 +471,18 @@ def _protocol_binding_path(paths: DeferralPaths) -> Path:
     return paths.root / "locks" / "protocol_binding.json"
 
 
-def _protocol_binding(paths: DeferralPaths, config: Path) -> dict[str, object]:
+def _protocol_binding(paths: DeferralPaths, config: Path, generation_spec: Path) -> dict[str, object]:
+    repository_root = Path(__file__).resolve().parent.parent
     files = {
         "config": config.resolve(),
+        "generation_spec": generation_spec.resolve(),
         "deferral": Path(__file__).with_name("deferral.py").resolve(),
         "deferral_evaluation": Path(__file__).with_name("deferral_evaluation.py").resolve(),
         "core": Path(__file__).with_name("core.py").resolve(),
         "detectors": Path(__file__).with_name("detectors.py").resolve(),
+        "prepare_inputs": repository_root / "tools" / "prepare_deferral_inputs.py",
+        "generation_runner": repository_root / "tools" / "run_deferral_generation.py",
+        "scoring_runner": repository_root / "tools" / "run_deferral_scoring.py",
     }
     return {
         "stage": "selective_deferral_protocol_binding",
@@ -529,14 +535,20 @@ def prepare_deferral(args: argparse.Namespace) -> None:
     requests = prepare_generation_requests(
         paths, topics,
         generator_families=generation.get("generator_families"),
-        prompt_template=str(generation.get("prompt_template", "")),
+        prompt_template=generation.get("prompt_templates", generation.get("prompt_template", "")),
         decoding=generation.get("decoding"),
         seed=int(generation.get("seed", config["seed"])),
-        retry=int(generation.get("retry", 0)),
-        target_length=int(generation["target_length"]),
+        retry=int(generation.get("max_retries", generation.get("retry", 0))),
+        target_length=(
+            None
+            if generation.get("target_length", "paired_human") == "paired_human"
+            else int(generation["target_length"])
+        ),
+        length_tolerance_fraction=float(generation.get("length_tolerance_fraction", 0.10)),
+        length_tolerance_min_words=int(generation.get("length_tolerance_min_words", 15)),
     )
     binding_path = _protocol_binding_path(paths)
-    lock_forecasts(binding_path, _protocol_binding(paths, args.config))
+    lock_forecasts(binding_path, _protocol_binding(paths, args.config, args.generation_spec))
     print(f"Locked {len(manifest['calibration'])} calibration humans, {len(manifest['pilot'])} pilot humans, and {len(requests)} AI requests.")
 
 
@@ -571,8 +583,19 @@ def calibrate_deferral(args: argparse.Namespace) -> None:
 def score_deferral_originals(args: argparse.Namespace) -> None:
     paths = DeferralPaths.from_root(args.study_root)
     _verify_deferral_protocol(paths)
-    imported = import_canonical_scores(args.score_table, paths)
     threshold = verify_lock(paths.threshold_lock)["payload"]["threshold"]
+    manifest = verify_lock(paths.lock)["payload"]
+    panel = verify_lock(paths.panel_lock)["payload"]
+    expected_ids = {str(row["record_id"]) for row in manifest.get("pilot", ())}
+    expected_ids.update(str(row["ai_record_id"]) for row in panel.get("panels", ()))
+    incoming = read_canonical_scores(args.score_table)
+    actual_keys = {(row.record_id, row.variant_id, row.endpoint) for row in incoming}
+    expected_keys = {(record_id, "original", "radar_roberta_large__vicuna7b_training") for record_id in expected_ids}
+    if actual_keys != expected_keys:
+        raise ValueError("Original-score import must contain exactly the 10,000 locked RADAR originals")
+    if any(row.failure or row.truncated or row.canonical_ai_score is None for row in incoming):
+        raise ValueError("Original-score import contains a failed, truncated, or missing score")
+    imported = import_canonical_scores(incoming, paths)
     originals = {
         (row.record_id, row.endpoint): row
         for row in imported
@@ -589,7 +612,17 @@ def score_deferral_originals(args: argparse.Namespace) -> None:
 def score_deferral_positives(args: argparse.Namespace) -> None:
     paths = DeferralPaths.from_root(args.study_root)
     _verify_deferral_protocol(paths)
-    rows = import_canonical_scores(args.score_table, paths)
+    worklist = verify_conditional_worklist(paths)
+    allowed = {(str(row["record_id"]), str(row["variant_id"]), str(row["endpoint"])) for row in worklist}
+    incoming = read_canonical_scores(args.score_table)
+    incoming_keys = {row.key for row in incoming}
+    if not incoming_keys <= allowed:
+        raise ValueError("Positive-score import contains a query outside the locked conditional worklist")
+    if any(row.failure or row.truncated or row.canonical_ai_score is None for row in incoming):
+        raise ValueError("Positive-score import contains a failed, truncated, or missing score")
+    rows = import_canonical_scores(incoming, paths)
+    if {row.key for row in rows} != allowed:
+        raise ValueError("Canonical score cache does not exactly cover the locked conditional worklist")
     print(f"Canonical score cache now contains {len(rows)} rows.")
 
 

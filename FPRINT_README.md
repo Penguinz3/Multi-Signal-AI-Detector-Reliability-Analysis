@@ -138,8 +138,9 @@ false accusations above correctly accused AI passages?
 This lane uses `F:\Research\FPRINT-selective-deferral` by convention and does
 not modify the completed forecast or fault-audit artifacts. RADAR is the sole
 fingerprint endpoint. MAGE is an expected-invariance preprocessing control, and
-LogRank supplies an original-score disagreement baseline only. The code imports
-AI outputs generated under locked requests; it does not call a model provider.
+LogRank supplies an original-score disagreement baseline only. Local BF16
+generation and detector scoring are resumable and use exact locked revisions;
+the table interfaces remain provider-neutral for later black-box endpoints.
 
 The pilot protocol and its pre-outcome feasibility correction are frozen in
 `docs/selective_deferral_pilot_protocol.md`; numerical settings and gates are in
@@ -150,14 +151,32 @@ require a newly locked whitespace-sensitive learned endpoint.
 The provider-neutral workflow is:
 
 ```powershell
-python -m fprint prepare-deferral-pilot --records human_candidates.csv `
+python tools\prepare_deferral_inputs.py `
+  --data-root F:\Research\FPRINT-storage\data `
+  --source-db F:\Research\FPRINT-storage-grouped-final\state\fprint.sqlite3 `
+  --output-dir F:\Research\FPRINT-selective-deferral\inputs `
+  --config deferral_config.json --tokenize `
+  --mage-repo F:\Research\FPRINT\vendor\MAGE
+
+python -m fprint prepare-deferral-pilot `
+  --records F:\Research\FPRINT-selective-deferral\inputs\human_candidates.csv `
   --study-root F:\Research\FPRINT-selective-deferral `
-  --topic-map source_topics.json --generation-spec generation_spec.json `
-  --human-token-counts human_token_counts.json
+  --topic-map F:\Research\FPRINT-selective-deferral\inputs\source_topics.json `
+  --generation-spec deferral_generation_spec.json `
+  --human-token-counts F:\Research\FPRINT-selective-deferral\inputs\human_token_counts.json
+
+python tools\run_deferral_generation.py `
+  --requests F:\Research\FPRINT-selective-deferral\state\generation_requests.csv `
+  --output F:\Research\FPRINT-selective-deferral\generation\accepted_outputs.csv `
+  --checkpoint F:\Research\FPRINT-selective-deferral\generation\checkpoint.jsonl `
+  --study-root F:\Research\FPRINT-selective-deferral `
+  --model-root F:\Research\FPRINT-selective-deferral\models `
+  --generation-spec .\deferral_generation_spec.json `
+  --mage-repo F:\Research\FPRINT\vendor\MAGE --device 0
 
 python -m fprint import-deferral-ai-panel `
   --study-root F:\Research\FPRINT-selective-deferral `
-  --outputs generated_outputs.csv
+  --outputs F:\Research\FPRINT-selective-deferral\generation\accepted_outputs.csv
 
 python -m fprint validate-deferral-probes `
   --study-root F:\Research\FPRINT-selective-deferral --probe wrap_80 `

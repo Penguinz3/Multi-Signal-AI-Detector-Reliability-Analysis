@@ -33,6 +33,37 @@ The correction prevents a guaranteed MAGE null effect from being presented as
 a failed replication and preserves the actual construct: detector response to
 reflow alone.
 
+A second pre-lock execution audit found that a common 250-word generation
+target would expose corpus and provenance through passage length, and that PMC
+did not contain enough completely unused groups for the required disjoint
+calibration and pilot samples. Before any request, threshold, or outcome lock
+was written, the protocol was therefore amended to:
+
+- use only the untouched `anchor_candidates` source partition;
+- replace PMC with ASAP-AES, yielding four corpora with adequate unused groups
+  and adding a direct student-writing setting;
+- match every AI request to its paired human base-text word count;
+- require generated output to fall within the larger of 10% or 15 words of
+  that frozen target, with at most two deterministic retries; and
+- use a frozen genre-specific prompt for student essays, personal blogs,
+  forum responses, and encyclopedia prose.
+
+Generator-family assignment is a seeded hash-balanced allocation within each
+corpus. These changes remove trivial length and prior-record reuse shortcuts.
+The three local BF16 generator families are SmolLM2, OLMo 2, and Granite 3.3.
+Generation is sequential with pinned per-request seeds and eager attention; this
+avoids batch-coupled sampling and fused-kernel instability on the local GPU.
+Qwen3 was rejected during the pre-lock engineering check because its no-think
+chat path repeatedly emitted duplicated reasoning/final-answer material and
+failed the frozen word-count envelope; no Qwen3 pilot output was retained.
+
+A pre-lock warm-resident BF16 benchmark used two discarded warmups followed by
+ten discarded 200-word requests per retained family. All 30 fitted passages
+passed the word-envelope and terminal-completeness checks. Median generation
+times were 25.5 seconds for SmolLM2, 27.7 seconds for OLMo 2, and 41.6 seconds
+for Granite 3.3 on the local RTX 3070 Laptop GPU. These texts are not pilot
+records and were never detector-scored.
+
 ## Inputs and transformations
 
 Human and AI originals are normalized symmetrically with
@@ -52,17 +83,26 @@ the common 460-token ceiling. The whole panel is rejected if any view fails.
 
 ## Data separation
 
-The pilot uses Blog Authorship, PMC, Stack Exchange, and WikiText-103. Exactly
+The pilot uses ASAP-AES, Blog Authorship, Stack Exchange, and WikiText-103,
+drawn only from records unused by the completed study. Exactly
 2,000 human groups (500 per corpus) form a threshold-only calibration pool.
-Exactly 5,000 additional human groups form the pilot, with at least 1,000 per
-corpus. One record is selected per author/user/article/source group, calibration
+Exactly 5,000 additional human groups form the pilot, with 1,250 per corpus.
+One record is selected per author/user/article/source group, calibration
 is selected first, and all ordering is fixed by a seeded content hash.
 
-Three immutable generator families must be supplied in a separate generation
-specification. Assignment is balanced within corpus, prompts are locked before
-generation, and provider-specific generation remains outside this repository.
-Imported AI outputs must match their opaque locked request, revision, decoding
-settings, retry policy, and provenance.
+Three immutable generator families are pinned in a separate generation
+specification. Assignment is hash-randomized and balanced within corpus;
+genre-specific prompts, paired target lengths, tolerances, and retry limits are
+locked before generation. Imported AI outputs must match their opaque locked
+request, revision, decoding settings, retry policy, length envelope, and
+provenance. An output is accepted only when it ends as a complete passage and
+its original plus all three reflow variants jointly pass the pinned RADAR and
+MAGE tokenizer ceiling; failure of any view rejects that generation attempt.
+If a raw generation exceeds its locked word envelope or ends with an incomplete
+suffix, the runner selects the complete-sentence prefix nearest the paired
+target that is still inside the envelope. It never crops below the minimum,
+invents a sentence ending, or uses detector scores to select text; outputs
+without a valid prefix are retried.
 
 ## Conditional scoring
 

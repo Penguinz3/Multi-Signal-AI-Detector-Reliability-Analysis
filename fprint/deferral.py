@@ -15,6 +15,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import re
 import textwrap
 from dataclasses import dataclass
@@ -30,7 +31,7 @@ PILOT_STAGE = "selective_deferral_pilot"
 # without a locked protocol amendment.
 PROBES = ("wrap_80", "sentence_blocks_2", "sentence_per_paragraph")
 VARIANT_LEVEL = "high"
-DEV_CORPORA = ("blog_authorship", "pmc", "stack_exchange", "wikitext_103")
+DEV_CORPORA = ("asap_aes", "blog_authorship", "stack_exchange", "wikitext_103")
 CALIBRATION_PER_CORPUS = 500
 PILOT_HUMAN_CAP = 5_000
 GENERATOR_FAMILY_COUNT = 3
@@ -153,6 +154,10 @@ class DeferralPaths:
         return self.root / "locks" / "radar_threshold.json"
 
     @property
+    def worklist_lock(self) -> Path:
+        return self.root / "locks" / "conditional_worklist.json"
+
+    @property
     def human_token_lock(self) -> Path:
         return self.root / "locks" / "human_token_panels.json"
 
@@ -223,6 +228,8 @@ class GenerationRequest:
     seed: int
     retry: int
     target_length: int
+    min_word_count: int
+    max_word_count: int
     decoding: Mapping[str, object]
 
 
@@ -329,6 +336,18 @@ def select_human_panel(
         remainder,
         key=lambda record: (_seeded_record_hash(record, seed, "pilot_remainder"), record.corpus, record.record_id),
     )
+    if pilot_total % len(corpora) == 0:
+        balanced_per_corpus = pilot_total // len(corpora)
+        if balanced_per_corpus < minimum_pilot_per_corpus:
+            raise ValueError("Balanced pilot cell is below its per-corpus minimum")
+        pilot = tuple(
+            record
+            for corpus in corpora
+            for record in [row for row in global_order if row.corpus == corpus][:balanced_per_corpus]
+        )
+        if len(pilot) != pilot_total:
+            raise ValueError("Pilot shortfall: insufficient balanced corpus cells")
+        return tuple(calibration), pilot
     required = []
     selected_ids: set[str] = set()
     for corpus in corpora:
@@ -460,6 +479,7 @@ def _record_payload(record: CanonicalRecord, partition: str, *, normalized: bool
         "raw_text_sha256": record.text_sha256,
         "non_whitespace_sha256": _non_whitespace_sha256(text),
         "provenance_label": record.provenance_label,
+        "word_count": len(_base_text(record.text).split()),
     }
 
 
@@ -656,19 +676,30 @@ def _normalize_generator_families(
     return tuple(sorted(pairs))
 
 
-def _render_generation_prompt(template: str, topic: str, target_length: int) -> str:
+def _render_generation_prompt(
+    template: str, topic: str, target_length: int,
+    min_word_count: int, max_word_count: int,
+) -> str:
     if not str(template).strip():
         raise ValueError("Generation prompt template is required")
     forbidden = ("{text}", "{human_text}", "{record_text}", "{source_text}")
     if any(token in template for token in forbidden):
         raise ValueError("Generation prompt may not interpolate human text")
     try:
-        prompt = template.format(topic=str(topic), target_length=int(target_length))
+        prompt = template.format(
+            topic=str(topic), target_length=int(target_length),
+            min_word_count=int(min_word_count), max_word_count=int(max_word_count),
+        )
     except (KeyError, ValueError) as error:
-        raise ValueError("Prompt template may use only {topic} and {target_length}") from error
+        raise ValueError("Prompt template may use only topic and frozen length fields") from error
     if "{" in prompt or "}" in prompt or not prompt.strip():
         raise ValueError("Prompt template contains an unresolved field")
     return prompt
+
+
+def _generation_attempt_seed(locked_seed: int, request_id: str, attempt: int) -> int:
+    payload = f"{int(locked_seed)}:{request_id}:{int(attempt)}".encode("utf-8")
+    return int.from_bytes(hashlib.sha256(payload).digest()[:8], "big") % 2_147_483_647
 
 
 def prepare_generation_requests(
@@ -676,11 +707,13 @@ def prepare_generation_requests(
     topic_map: Mapping[str, object],
     *,
     generator_families: Mapping[str, str] | Sequence[Mapping[str, object] | Sequence[str]] | None = None,
-    prompt_template: str = "Write an original passage about {topic} in approximately {target_length} words.",
+    prompt_template: str | Mapping[str, str] = "Write an original passage about {topic} in approximately {target_length} words.",
     decoding: Mapping[str, object] | None = None,
     seed: int = 20260824,
     retry: int = 0,
-    target_length: int = 250,
+    target_length: int | None = None,
+    length_tolerance_fraction: float = 0.10,
+    length_tolerance_min_words: int = 15,
 ) -> tuple[GenerationRequest, ...]:
     """Prepare and lock provider-neutral requests without human passage text."""
     pilot_lock = verify_pilot_lock(paths)
@@ -691,8 +724,10 @@ def prepare_generation_requests(
         raise RuntimeError("Human token panels are bound to a different pilot lock")
     if not isinstance(topic_map, Mapping) or not topic_map:
         raise ValueError("A non-empty record-to-topic map is required")
-    if retry < 0 or target_length <= 0:
+    if retry < 0 or (target_length is not None and target_length <= 0):
         raise ValueError("Retry must be nonnegative and target length positive")
+    if not 0 <= length_tolerance_fraction <= 1 or length_tolerance_min_words < 0:
+        raise ValueError("Invalid generation length tolerance")
     families = _normalize_generator_families(generator_families)
     decoding_payload = dict(decoding or {"temperature": 0.7, "top_p": 0.95})
     pilot_rows = [row for row in pilot_lock["payload"].get("pilot", ()) if set(PROBES) <= {
@@ -708,27 +743,52 @@ def prepare_generation_requests(
         by_corpus.setdefault(corpus, []).append(row)
     request_rows: list[GenerationRequest] = []
     family_order = tuple(family for family, _ in families)
+    if isinstance(prompt_template, Mapping):
+        prompt_templates = {str(key): str(value) for key, value in prompt_template.items()}
+    else:
+        prompt_templates = {"default": str(prompt_template)}
     for corpus in sorted(by_corpus):
-        rows = sorted(by_corpus[corpus], key=lambda row: str(row["record_id"]))
+        template = prompt_templates.get(corpus, prompt_templates.get("default", ""))
+        rows = sorted(
+            by_corpus[corpus],
+            key=lambda row: (
+                _sha256({"seed": int(seed), "purpose": "generator_assignment", "record_id": str(row["record_id"])}),
+                str(row["record_id"]),
+            ),
+        )
         for index, row in enumerate(rows):
             family, revision = families[index % len(families)]
             topic_value = topic_map[str(row["record_id"])]
             topic = str(topic_value.get("topic", topic_value) if isinstance(topic_value, Mapping) else topic_value)
             if not topic.strip() or _text_sha256(_base_text(topic)) == str(row["text_sha256"]):
                 raise ValueError(f"Topic must be non-empty and cannot reproduce the human passage: {row['record_id']}")
-            prompt = _render_generation_prompt(prompt_template, topic, target_length)
+            paired_length = int(row.get("word_count", 0))
+            request_length = int(target_length if target_length is not None else paired_length)
+            if request_length <= 0:
+                raise ValueError(f"Missing paired human word count: {row['record_id']}")
+            tolerance = max(
+                int(length_tolerance_min_words),
+                int(math.ceil(request_length * float(length_tolerance_fraction))),
+            )
+            min_word_count = max(1, request_length - tolerance)
+            max_word_count = request_length + tolerance
+            prompt = _render_generation_prompt(
+                template, topic, request_length, min_word_count, max_word_count,
+            )
             prompt_hash = _text_sha256(prompt)
             identity = {
                 "record_id": str(row["record_id"]), "corpus": corpus,
                 "generator_family": family, "generator_revision": revision,
                 "prompt_sha256": prompt_hash, "seed": int(seed), "retry": int(retry),
-                "target_length": int(target_length), "decoding": decoding_payload,
+                "target_length": request_length, "min_word_count": min_word_count,
+                "max_word_count": max_word_count, "decoding": decoding_payload,
             }
             request_rows.append(GenerationRequest(
                 request_id=_sha256(identity), record_id=str(row["record_id"]), corpus=corpus,
                 generator_family=family, generator_revision=revision, prompt=prompt,
                 prompt_sha256=prompt_hash, seed=int(seed), retry=int(retry),
-                target_length=int(target_length), decoding=decoding_payload,
+                target_length=request_length, min_word_count=min_word_count,
+                max_word_count=max_word_count, decoding=decoding_payload,
             ))
         counts = {family: sum(request.generator_family == family for request in request_rows if request.corpus == corpus) for family in family_order}
         if max(counts.values(), default=0) - min(counts.values(), default=0) > 1:
@@ -742,6 +802,7 @@ def prepare_generation_requests(
             "generator_family": row.generator_family, "generator_revision": row.generator_revision,
             "prompt": row.prompt, "prompt_sha256": row.prompt_sha256, "seed": row.seed,
             "retry": row.retry, "target_length": row.target_length,
+            "min_word_count": row.min_word_count, "max_word_count": row.max_word_count,
             "decoding": dict(row.decoding),
         }
         for row in request_rows
@@ -757,9 +818,12 @@ def prepare_generation_requests(
             for key, value in sorted(topic_map.items())
             if str(key) in {str(row["record_id"]) for row in pilot_rows}
         },
-        "prompt_template": prompt_template,
+        "prompt_template": prompt_templates,
         "decoding": decoding_payload,
-        "seed": int(seed), "retry": int(retry), "target_length": int(target_length),
+        "seed": int(seed), "retry": int(retry),
+        "target_length": "paired_human" if target_length is None else int(target_length),
+        "length_tolerance_fraction": float(length_tolerance_fraction),
+        "length_tolerance_min_words": int(length_tolerance_min_words),
         "requests": rows_payload,
         "requests_sha256": _sha256(rows_payload),
     }
@@ -769,13 +833,17 @@ def prepare_generation_requests(
             raise RuntimeError("Existing generation-request lock disagrees with requested protocol")
         return tuple(_generation_request_from_mapping(row) for row in existing["requests"])
     paths.generation_json.parent.mkdir(parents=True, exist_ok=True)
-    paths.generation_json.write_text(json.dumps(rows_payload, sort_keys=True, indent=2), encoding="utf-8")
-    fields = ("request_id", "record_id", "corpus", "generator_family", "generator_revision", "prompt", "prompt_sha256", "seed", "retry", "target_length", "decoding")
-    with paths.generation_csv.open("x", encoding="utf-8", newline="") as handle:
+    json_temporary = paths.generation_json.with_suffix(".json.tmp")
+    json_temporary.write_text(json.dumps(rows_payload, sort_keys=True, indent=2), encoding="utf-8")
+    fields = ("request_id", "record_id", "corpus", "generator_family", "generator_revision", "prompt", "prompt_sha256", "seed", "retry", "target_length", "min_word_count", "max_word_count", "decoding")
+    csv_temporary = paths.generation_csv.with_suffix(".csv.tmp")
+    with csv_temporary.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         for row in rows_payload:
             writer.writerow({**row, "decoding": json.dumps(row["decoding"], sort_keys=True)})
+    json_temporary.replace(paths.generation_json)
+    csv_temporary.replace(paths.generation_csv)
     payload["request_json_sha256"] = _file_sha256(paths.generation_json)
     payload["request_csv_sha256"] = _file_sha256(paths.generation_csv)
     lock_forecasts(paths.generation_lock, payload)
@@ -790,7 +858,9 @@ def _generation_request_from_mapping(row: Mapping[str, object]) -> GenerationReq
         request_id=str(row["request_id"]), record_id=str(row["record_id"]), corpus=str(row["corpus"]),
         generator_family=str(row["generator_family"]), generator_revision=str(row["generator_revision"]),
         prompt=str(row["prompt"]), prompt_sha256=str(row["prompt_sha256"]), seed=int(row["seed"]),
-        retry=int(row["retry"]), target_length=int(row["target_length"]), decoding=dict(decoding),
+        retry=int(row["retry"]), target_length=int(row["target_length"]),
+        min_word_count=int(row.get("min_word_count", row["target_length"])),
+        max_word_count=int(row.get("max_word_count", row["target_length"])), decoding=dict(decoding),
     )
 
 
@@ -860,9 +930,13 @@ def import_generation_outputs(
         for field_name in ("generator_family", "generator_revision", "retry"):
             if str(row.get(field_name, "")) != str(request[field_name]):
                 raise ValueError(f"Generation provenance mismatch for {request_id}: {field_name}")
-        for field_name in ("seed", "target_length"):
-            if field_name in row and str(row[field_name]) != str(request[field_name]):
-                raise ValueError(f"Generation provenance mismatch for {request_id}: {field_name}")
+        if "target_length" in row and str(row["target_length"]) != str(request["target_length"]):
+            raise ValueError(f"Generation provenance mismatch for {request_id}: target_length")
+        attempt = int(row.get("attempt", 0) or 0)
+        if attempt < 0 or attempt > int(request["retry"]):
+            raise ValueError(f"Generation retry attempt is outside the frozen policy: {request_id}")
+        if "seed" in row and str(row["seed"]) != str(_generation_attempt_seed(int(request["seed"]), request_id, attempt)):
+            raise ValueError(f"Generation provenance mismatch for {request_id}: seed")
         if "decoding" in row and row["decoding"] not in (None, ""):
             decoding = row["decoding"]
             if isinstance(decoding, str):
@@ -872,6 +946,11 @@ def import_generation_outputs(
         text = str(row.get("text", row.get("generated_text", "")))
         if not text.strip():
             raise ValueError(f"Empty generated output: {request_id}")
+        output_word_count = len(_base_text(text).split())
+        if not int(request["min_word_count"]) <= output_word_count <= int(request["max_word_count"]):
+            raise ValueError(f"Generated output violates frozen length tolerance: {request_id}")
+        if re.search(r"[.!?][\"')\]]*$", text.strip()) is None:
+            raise ValueError(f"Generated output is not a complete passage: {request_id}")
         variants = build_reflow_variants(text, probes=PROBES)
         by_variant = {variant.variant_id: variant for variant in variants}
         panel_counts = None
@@ -894,6 +973,9 @@ def import_generation_outputs(
             "corpus": str(request["corpus"]),
             "generator_family": str(request["generator_family"]),
             "generator_revision": str(request["generator_revision"]),
+            "target_length": int(request["target_length"]),
+            "output_word_count": output_word_count,
+            "attempt": attempt,
             "base_text_sha256": _text_sha256(_base_text(text)),
             "non_whitespace_sha256": _non_whitespace_sha256(text),
             "mage_effective_input_sha256": mage_effective_input_hash(text),
@@ -1480,7 +1562,46 @@ def build_conditional_worklist(
             writer = csv.DictWriter(handle, fieldnames=fields)
             writer.writeheader()
             writer.writerows(result)
+    worklist_payload = {
+        "schema_version": SCHEMA_VERSION,
+        "stage": "conditional_worklist",
+        "pilot_lock_sha256": verify_pilot_lock(paths)["sha256"],
+        "panel_lock_sha256": _file_sha256(paths.panel_lock) if paths.panel_lock.exists() else None,
+        "threshold_lock_sha256": _file_sha256(paths.threshold_lock),
+        "rows_sha256": _sha256(result),
+        "worklist_csv_sha256": _file_sha256(paths.worklist),
+        "row_count": len(result),
+        "radar_original_count": len(records),
+        "radar_positive_count": len(positives),
+        "radar_query_count": accounting,
+    }
+    if paths.worklist_lock.exists():
+        existing_lock = verify_lock(paths.worklist_lock)["payload"]
+        if canonical_json(existing_lock) != canonical_json(worklist_payload):
+            raise RuntimeError("Existing conditional-worklist lock disagrees")
+    else:
+        lock_forecasts(paths.worklist_lock, worklist_payload)
     return result
+
+
+def verify_conditional_worklist(paths: DeferralPaths) -> tuple[dict[str, object], ...]:
+    if not paths.worklist.exists() or not paths.worklist_lock.exists():
+        raise RuntimeError("Locked conditional worklist is required")
+    payload = verify_lock(paths.worklist_lock)["payload"]
+    if payload.get("pilot_lock_sha256") != verify_pilot_lock(paths)["sha256"]:
+        raise RuntimeError("Conditional worklist references a different pilot lock")
+    current_panel_hash = _file_sha256(paths.panel_lock) if paths.panel_lock.exists() else None
+    if payload.get("panel_lock_sha256") != current_panel_hash:
+        raise RuntimeError("Conditional worklist references a different generated panel")
+    if payload.get("threshold_lock_sha256") != _file_sha256(paths.threshold_lock):
+        raise RuntimeError("Conditional worklist references a different threshold")
+    if payload.get("worklist_csv_sha256") != _file_sha256(paths.worklist):
+        raise RuntimeError("Conditional worklist CSV hash mismatch")
+    with paths.worklist.open("r", encoding="utf-8", newline="") as handle:
+        rows = tuple(dict(row) for row in csv.DictReader(handle))
+    if payload.get("rows_sha256") != _sha256(rows) or payload.get("row_count") != len(rows):
+        raise RuntimeError("Conditional worklist rows disagree with lock")
+    return rows
 
 
 def assemble_evaluation_rows(
@@ -1613,6 +1734,7 @@ __all__ = [
     "require_pilot_authorization", "select_human_panel", "sentence_blocks_2_variant",
     "sentence_blocks_variant", "sentence_per_paragraph_variant",
     "triplet_fits_token_budget", "validate_canonical_scores", "validate_mage_effective_input_hashes",
+    "verify_conditional_worklist",
     "validate_reflow_variant", "validate_triplet_token_budget", "verify_generation_lock",
     "verify_pilot_lock", "wrap_80_variant",
 ]

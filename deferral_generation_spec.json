@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "execution_backend": "local_cuda_sequential",
+  "dtype": "bfloat16",
+  "attention_implementation": "eager",
+  "generator_families": [
+    {
+      "family": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "revision": "31b70e2e869a7173562077fd711b654946d38674",
+      "artifact_files": {
+        "config.json": "994f50b16abb4ae00880baefe03c10260b5bd608d2bf586f7056ca05a534feea",
+        "generation_config.json": "87b916edaaab66b3899b9d0dd0752727dff6666686da0504d89ae0a6e055a013",
+        "merges.txt": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510",
+        "model.safetensors": "f55217be716b6a997b97b9d8d7eb6fad02e00858f5010ec24f64603c3a98a0e8",
+        "special_tokens_map.json": "2b7379f3ae813529281a5c602bc5a11c1d4e0a99107aaa597fe936c1e813ca52",
+        "tokenizer.json": "9ca9acddb6525a194ec8ac7a87f24fbba7232a9a15ffa1af0c1224fcd888e47c",
+        "tokenizer_config.json": "4ec77d44f62efeb38d7e044a1db318f6a939438425312dfa333b8382dbad98df",
+        "vocab.json": "82b84012e3add4d01d12ba14442026e49b8cbbaead1f79ecf3d919784f82dc79"
+      }
+    },
+    {
+      "family": "allenai/OLMo-2-0425-1B-Instruct",
+      "revision": "48d788eca847d4d7548f375ad03d3c9312f6139e",
+      "artifact_files": {
+        "config.json": "0d15ebb6cb8d998513b46ef337214176a6fd59fe5f16b30387c70d5f87795a9c",
+        "generation_config.json": "437b97826bb4430c205083a0986fbe31f4959cffbe445e47fb7c5192fdcb8d58",
+        "merges.txt": "b6fe424e334903f7fb84d3a106d9730455f4744b9fe3c21ee136d97a00e72502",
+        "model.safetensors": "36d044c73655bb904f822915e6294ba3dae8e6e1af5e703e9d452f2d6a3a294f",
+        "special_tokens_map.json": "78afb564e81264029b25f9caf24bda2521d5bdaeff5cd3fdbc01d3da2e8ce2f2",
+        "tokenizer.json": "73fd5254624f39a88e3faac6a8e11300fc3c735ed37880d4f4f08db898eaecca",
+        "tokenizer_config.json": "50c412c57d832057a3d5db42064c741f751e570f7c8788f037bfb0d2dd6e5f49",
+        "vocab.json": "9e14712c91b37c7aab74b1306baa46ac342d620637a4b44523cdc3aec7d24195"
+      }
+    },
+    {
+      "family": "ibm-granite/granite-3.3-2b-instruct",
+      "revision": "707f574c62054322f6b5b04b6d075f0a8f05e0f0",
+      "artifact_files": {
+        "added_tokens.json": "bb33d55934aa82d29cc62f3d19cdbc60f315763f6ccee21bdfd8b3bde2f33d3b",
+        "config.json": "9202d328d8368958aab7dad89a8e6aa35c250b3a2eedd2d8850ee0bcceca65f6",
+        "generation_config.json": "9c95e80167f08fbeb1feba239e0749507c25d18ffab43ffa10887821eed21c38",
+        "merges.txt": "303127a244b0078878156c17229f36d11b7a3a3f8e47b7cfdbb304ff46be5030",
+        "model-00001-of-00002.safetensors": "12880d33c0ad4726af5cf8c07406905f9b496253c58ee46f52be8bde8ccf2254",
+        "model-00002-of-00002.safetensors": "a8757c5bf7627933e7fddbd9bab0533491b4dc0962820e0617f356ca1a379ffa",
+        "model.safetensors.index.json": "32ea3f438335d51c8e630a83898ceb23bdffd34291a0eade07474211928fa243",
+        "special_tokens_map.json": "21ce694081bb9ae1bd4bc64549e72e0799ebb74705e6b650e3585d85b71ebdc1",
+        "tokenizer.json": "91168e938f05796aa6dcca7e485e4b30ab52785320c7a6391ecef86e6c84681e",
+        "tokenizer_config.json": "f65a6a5a911424c85f157c40cfbdf06e025814c755480ba2e998d7fba1178664",
+        "vocab.json": "80ab859339a2525fdfbda14bc39df02dffb824aefdaf86426217bbb146d17e01"
+      }
+    }
+  ],
+  "prompt_templates": {
+    "asap_aes": "Write an original student essay responding to this assignment topic: {topic}. Aim for {target_length} words; the essay must contain between {min_word_count} and {max_word_count} words. Use natural student prose, make a clear argument or explanation, and return only the essay. Do not mention these instructions, artificial intelligence, or language models.",
+    "blog_authorship": "Write an original personal blog entry connected to this broad author category: {topic}. Aim for {target_length} words; the entry must contain between {min_word_count} and {max_word_count} words. Use natural first-person prose and return only the entry. Do not mention these instructions, artificial intelligence, or language models.",
+    "stack_exchange": "Write an original, self-contained forum response to this question: {topic}. Aim for {target_length} words; the response must contain between {min_word_count} and {max_word_count} words. Explain the answer naturally and return only the response. Do not mention these instructions, artificial intelligence, or language models.",
+    "wikitext_103": "Write an original encyclopedia-style section about this subject: {topic}. Aim for {target_length} words; the section must contain between {min_word_count} and {max_word_count} words. Use neutral expository prose and return only the section. Do not mention these instructions, artificial intelligence, or language models."
+  },
+  "decoding": {
+    "do_sample": true,
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "repetition_penalty": 1.05,
+    "disable_thinking": true
+  },
+  "seed": 20260824,
+  "max_retries": 2,
+  "target_length": "paired_human",
+  "length_tolerance_fraction": 0.1,
+  "length_tolerance_min_words": 15,
+  "output_fitting_policy": "nearest_complete_sentence_prefix_within_envelope"
+}

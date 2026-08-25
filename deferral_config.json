@@ -3,11 +3,12 @@
   "seed": 20260824,
   "study_stage": "pilot_only",
   "development_corpora": [
+    "asap_aes",
     "blog_authorship",
-    "pmc",
     "stack_exchange",
     "wikitext_103"
   ],
+  "source_partition": "anchor_candidates",
   "endpoint_roles": {
     "fingerprint_primary": "radar_roberta_large__vicuna7b_training",
     "preprocessing_invariance_control": "mage_longformer__paper",
@@ -29,6 +30,7 @@
   "pilot": {
     "human_groups_total": 5000,
     "human_groups_min_per_corpus": 1000,
+    "human_groups_per_corpus": 1250,
     "generator_families_required": 3,
     "ai_outputs_per_human_group": 1,
     "manual_validation_examples_per_probe": 300,
