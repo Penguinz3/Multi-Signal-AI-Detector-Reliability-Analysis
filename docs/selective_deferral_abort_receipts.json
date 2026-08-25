@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "run_id": "selective_deferral_v1",
+      "status": "aborted_preoutcome",
+      "accepted_generation_rows": 4,
+      "detector_score_rows": 0,
+      "software_commit": "ae5980fede2c53a39ceb28e9996a720b7a1d73ea",
+      "checkpoint_sha256": "ef97dd64b85d95a942800aa3a295e3ed32b189222f8e758bf3e9d5e642dd983f",
+      "pilot_lock_sha256": "53485b82a115e5e1e6e392ec88f5e6bfd6467adcb9cf6461390c91c99ced88ab",
+      "generation_lock_sha256": "0671cca5a4762e53cca435e847d2f95ab74e5dd51f918f7af4dc904f8d80041d",
+      "failed_request_id": "50a1b34e74170b14dc2b150112224f4db78c287d1ca4b7c7041c4f4143f66433",
+      "generator_family": "allenai/OLMo-2-0425-1B-Instruct",
+      "target_words": 349,
+      "word_envelope": [314, 384],
+      "attempt_radar_token_maxima": [473, 480, 495],
+      "reason": "No nearest-length complete prefix passed the 460-token panel ceiling."
+    },
+    {
+      "run_id": "selective_deferral_v2",
+      "status": "aborted_preoutcome",
+      "accepted_generation_rows": 66,
+      "detector_score_rows": 0,
+      "software_commit": "fde1b73d917579b92465efccd1713ea0c9183acc",
+      "checkpoint_sha256": "762cf62723a6f40de8276ce3b3e02b9b7e85a9a154acfa643b8528da760a6d89",
+      "pilot_lock_sha256": "53485b82a115e5e1e6e392ec88f5e6bfd6467adcb9cf6461390c91c99ced88ab",
+      "generation_lock_sha256": "0671cca5a4762e53cca435e847d2f95ab74e5dd51f918f7af4dc904f8d80041d",
+      "failed_request_id": "6f16c0848c092633f35dd4f59e699cfb770397396a9c885c77d2e8f29d30b128",
+      "generator_family": "ibm-granite/granite-3.3-2b-instruct",
+      "target_words": 347,
+      "word_envelope": [312, 382],
+      "attempt_candidate_diagnostics": [
+        [[330, 484]],
+        [[337, 493], [316, 465]],
+        [[332, 476]]
+      ],
+      "reason": "No complete prefix jointly passed the frozen word envelope and 460-token panel ceiling."
+    }
+  ]
+}

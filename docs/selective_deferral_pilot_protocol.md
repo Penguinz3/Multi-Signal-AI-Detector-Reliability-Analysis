@@ -114,6 +114,26 @@ score-blind fitting correction was committed before creating a fresh execution
 root and does not alter the human selection, prompts, seeds, retry count,
 threshold, probes, models, or success gates.
 
+The second locked execution root was stopped after 66 generated passages and
+before detector scoring when a 347-word Granite request had no complete prefix
+that jointly satisfied its frozen 312-word minimum and the 460-token ceiling;
+the closest admissible prefix was 316 words and 465 tokens. The final execution
+therefore restricts both selected human sources and their paired AI targets to
+at most 300 words while retaining the stricter 460-token ceiling. This removes
+the structural incompatibility rather than relaxing truncation protection. The
+two stopped roots remain preserved, and neither contributes pilot records.
+The final pilot quotas are fixed at 1,400 ASAP-AES, 1,000 Blog Authorship,
+1,200 Stack Exchange, and 1,400 WikiText groups after 500 calibration groups
+per corpus. Macro-weighted evaluation prevents unequal raw corpus sizes from
+dominating the result. Generation reserves at least 1.35 tokens per minimum
+requested word, then applies the frozen complete-prefix and tokenizer checks;
+this score-free control passed the discarded 300-word boundary case that had
+failed without a minimum token budget.
+A final discarded stress matrix covered all three generator families by all
+four corpus-specific prompt genres at the 300-word boundary. All 12 cells
+passed on attempt zero; selected lengths were 289--309 words and the maximum
+four-view token count was 451. Stress texts were never retained or scored.
+
 ## Conditional scoring
 
 The frozen RADAR threshold is the empirical 95th percentile of the independent

@@ -135,9 +135,10 @@ narrower question: among passages that RADAR already accuses, do its signed
 responses to three character-preserving reflow transformations help rank human
 false accusations above correctly accused AI passages?
 
-The active corrected lane uses `F:\Research\FPRINT-selective-deferral-v2` and
+The active corrected lane uses `F:\Research\FPRINT-selective-deferral-v3` and
 reuses the read-only inputs/models under `F:\Research\FPRINT-selective-deferral`.
-The original root preserves the four-output, pre-score aborted execution and does
+The original and v2 roots preserve the four- and 66-output pre-score aborted
+executions; neither contributes pilot records. The active lane does
 not modify the completed forecast or fault-audit artifacts. RADAR is the sole
 fingerprint endpoint. MAGE is an expected-invariance preprocessing control, and
 LogRank supplies an original-score disagreement baseline only. Local BF16
@@ -162,42 +163,42 @@ python tools\prepare_deferral_inputs.py `
 
 python -m fprint prepare-deferral-pilot `
   --records F:\Research\FPRINT-selective-deferral\inputs\human_candidates.csv `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 `
+  --study-root F:\Research\FPRINT-selective-deferral-v3 `
   --topic-map F:\Research\FPRINT-selective-deferral\inputs\source_topics.json `
   --generation-spec deferral_generation_spec.json `
   --human-token-counts F:\Research\FPRINT-selective-deferral\inputs\human_token_counts.json
 
 python tools\run_deferral_generation.py `
-  --requests F:\Research\FPRINT-selective-deferral-v2\state\generation_requests.csv `
-  --output F:\Research\FPRINT-selective-deferral-v2\generation\accepted_outputs.csv `
-  --checkpoint F:\Research\FPRINT-selective-deferral-v2\generation\checkpoint.jsonl `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 `
+  --requests F:\Research\FPRINT-selective-deferral-v3\state\generation_requests.csv `
+  --output F:\Research\FPRINT-selective-deferral-v3\generation\accepted_outputs.csv `
+  --checkpoint F:\Research\FPRINT-selective-deferral-v3\generation\checkpoint.jsonl `
+  --study-root F:\Research\FPRINT-selective-deferral-v3 `
   --model-root F:\Research\FPRINT-selective-deferral\models `
   --generation-spec .\deferral_generation_spec.json `
   --mage-repo F:\Research\FPRINT\vendor\MAGE --device 0
 
 python -m fprint import-deferral-ai-panel `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 `
-  --outputs F:\Research\FPRINT-selective-deferral-v2\generation\accepted_outputs.csv
+  --study-root F:\Research\FPRINT-selective-deferral-v3 `
+  --outputs F:\Research\FPRINT-selective-deferral-v3\generation\accepted_outputs.csv
 
 python -m fprint validate-deferral-probes `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 --probe wrap_80 `
+  --study-root F:\Research\FPRINT-selective-deferral-v3 --probe wrap_80 `
   --text-table locked_pilot_texts.csv
 
 python -m fprint calibrate-deferral-thresholds `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 `
+  --study-root F:\Research\FPRINT-selective-deferral-v3 `
   --score-table calibration_scores.csv
 
 python -m fprint score-deferral-originals `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 `
+  --study-root F:\Research\FPRINT-selective-deferral-v3 `
   --score-table pilot_original_scores.csv
 
 python -m fprint score-deferral-positives `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 `
+  --study-root F:\Research\FPRINT-selective-deferral-v3 `
   --score-table completed_conditional_scores.csv
 
 python -m fprint evaluate-deferral-pilot `
-  --study-root F:\Research\FPRINT-selective-deferral-v2 `
+  --study-root F:\Research\FPRINT-selective-deferral-v3 `
   --text-table locked_pilot_texts.csv
 ```
 

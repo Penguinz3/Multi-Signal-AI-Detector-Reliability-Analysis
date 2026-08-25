@@ -170,6 +170,10 @@ class RunDeferralGenerationTests(unittest.TestCase):
             )
             self.assertEqual(rows[0]["text"], "One two three four. Five six seven eight.")
             self.assertEqual(rows[0]["attempt"], 0)
+            self.assertEqual(rows[0]["raw_word_count"], 12)
+            self.assertEqual(rows[0]["selected_word_count"], 8)
+            self.assertEqual(rows[0]["prefix_rank"], 0)
+            self.assertEqual(rows[0]["prefix_used"], 1)
             self.assertEqual(len(backend.calls), 1)
 
 

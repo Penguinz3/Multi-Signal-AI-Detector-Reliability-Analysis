@@ -73,6 +73,21 @@ class DeferralProbeTests(unittest.TestCase):
 
 
 class DeferralManifestTests(unittest.TestCase):
+    def test_manifest_excludes_sources_above_paired_word_cap(self):
+        rows = _records() + [{
+            "record_id": "pilot-long", "corpus": "corpus-a", "group_id": "pilot-long-group",
+            "text": " ".join(["A deliberately long human passage."] * 20),
+            "provenance_label": "human", "partition": "pilot",
+        }]
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest = prepare_pilot_manifest(
+                rows, DeferralPaths.from_root(Path(temporary)),
+                calibration_cap=2, pilot_cap=3, width=20, block_size=2,
+                max_paired_target_words=30,
+            )
+            self.assertEqual(manifest["max_paired_target_words"], 30)
+            self.assertNotIn("pilot-long", {row["record_id"] for row in manifest["pilot"]})
+
     def test_manifest_is_group_disjoint_and_lock_is_immutable(self):
         with tempfile.TemporaryDirectory() as temporary:
             paths = DeferralPaths.from_root(Path(temporary))
@@ -109,6 +124,25 @@ class DeferralManifestTests(unittest.TestCase):
         self.assertEqual({corpus: sum(row.corpus == corpus for row in calibration) for corpus in DEV_CORPORA}, {corpus: 500 for corpus in DEV_CORPORA})
         self.assertTrue(all(sum(row.corpus == corpus for row in pilot) >= 1_000 for corpus in DEV_CORPORA))
         self.assertFalse({(row.corpus, row.group_id) for row in calibration} & {(row.corpus, row.group_id) for row in pilot})
+
+    def test_locked_unequal_corpus_quotas_are_exact(self):
+        records = []
+        quotas = dict(zip(DEV_CORPORA, (4, 3, 2, 3)))
+        for corpus in DEV_CORPORA:
+            for index in range(8):
+                records.append({
+                    "record_id": f"{corpus}-{index}", "corpus": corpus,
+                    "group_id": f"{corpus}-group-{index}", "text": "Human text.",
+                    "provenance_label": "human",
+                })
+        from fprint.deferral import read_canonical_table
+        calibration, pilot = select_human_panel(
+            read_canonical_table(records), calibration_per_corpus=1,
+            pilot_total=12, minimum_pilot_per_corpus=2,
+            pilot_per_corpus=quotas,
+        )
+        self.assertEqual(len(calibration), 4)
+        self.assertEqual({corpus: sum(row.corpus == corpus for row in pilot) for corpus in DEV_CORPORA}, quotas)
 
 
 class DeferralWorklistTests(unittest.TestCase):

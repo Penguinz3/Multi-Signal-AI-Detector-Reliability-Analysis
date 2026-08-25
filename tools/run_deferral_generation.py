@@ -25,7 +25,8 @@ from typing import Any, Callable, Iterable, Mapping, Protocol, Sequence
 
 IMPORT_FIELDS = (
     "request_id", "generator_family", "generator_revision", "retry", "attempt",
-    "seed", "target_length", "decoding", "text", "token_counts",
+    "seed", "target_length", "raw_word_count", "selected_word_count",
+    "prefix_rank", "prefix_used", "decoding", "text", "token_counts",
 )
 
 
@@ -260,6 +261,7 @@ class HuggingFaceBackend:
             input_ids = encoded
             encoded = {"input_ids": encoded, "attention_mask": torch.ones_like(encoded)}
         runtime_decoding.pop("max_length", None)
+        runtime_decoding.setdefault("min_new_tokens", max(1, int(min_word_count * 1.35)))
         runtime_decoding.setdefault("max_new_tokens", max(32, int(max_word_count * 1.60)))
         if "temperature" in runtime_decoding:
             runtime_decoding["do_sample"] = float(runtime_decoding["temperature"]) > 0
@@ -318,7 +320,10 @@ def _append_checkpoint(path: Path, row: Mapping[str, object]) -> None:
 def _csv_row(
     request: LockedRequest, text: str, attempt: int, seed: int,
     token_counts: Mapping[str, object] | None = None,
+    *, raw_word_count: int | None = None, prefix_rank: int = 0,
 ) -> dict[str, object]:
+    selected_word_count = _word_count(text)
+    raw_count = selected_word_count if raw_word_count is None else int(raw_word_count)
     return {
         "request_id": request.request_id,
         "generator_family": request.generator_family,
@@ -327,6 +332,10 @@ def _csv_row(
         "attempt": attempt,
         "seed": seed,
         "target_length": request.target_length,
+        "raw_word_count": raw_count,
+        "selected_word_count": selected_word_count,
+        "prefix_rank": int(prefix_rank),
+        "prefix_used": int(raw_count != selected_word_count or prefix_rank != 0),
         "decoding": json.dumps(dict(request.decoding), sort_keys=True),
         "text": text,
         "token_counts": "" if token_counts is None else json.dumps(token_counts, sort_keys=True),
@@ -364,6 +373,8 @@ def run_generation(
         count = _word_count(str(row.get("text", "")))
         if not request.min_word_count <= count <= request.max_word_count or not _is_complete_passage(str(row.get("text", ""))):
             raise ValueError(f"Checkpoint contains out-of-range text: {request_id}")
+        if int(row.get("selected_word_count", count)) != count or int(row.get("raw_word_count", count)) < count:
+            raise ValueError(f"Checkpoint word-count provenance mismatch: {request_id}")
         if panel_counter is not None:
             expected_counts = json.dumps(panel_counter(str(row["text"])), sort_keys=True)
             actual_counts = row.get("token_counts", "")
@@ -397,12 +408,16 @@ def run_generation(
                     min_word_count=request.min_word_count,
                     max_word_count=request.max_word_count,
                 )
-                for text in candidates:
+                raw_word_count = _word_count(_passage_only(raw_text))
+                for prefix_rank, text in enumerate(candidates):
                     try:
                         token_counts = panel_counter(text) if panel_counter is not None else None
                     except ValueError:
                         continue
-                    accepted = _csv_row(request, text, attempt, seed, token_counts)
+                    accepted = _csv_row(
+                        request, text, attempt, seed, token_counts,
+                        raw_word_count=raw_word_count, prefix_rank=prefix_rank,
+                    )
                     _append_checkpoint(checkpoint_path, accepted)
                     all_rows[request.request_id] = accepted
                     if len(all_rows) % 25 == 0 or len(all_rows) == total:

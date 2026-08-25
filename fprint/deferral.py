@@ -297,6 +297,7 @@ def select_human_panel(
     pilot_total: int = PILOT_HUMAN_CAP,
     dev_corpora: Sequence[str] = DEV_CORPORA,
     minimum_pilot_per_corpus: int = 1_000,
+    pilot_per_corpus: Mapping[str, int] | None = None,
 ) -> tuple[tuple[CanonicalRecord, ...], tuple[CanonicalRecord, ...]]:
     """Select one hash-first human record per group, calibration before pilot."""
     corpora = tuple(str(corpus) for corpus in dev_corpora)
@@ -336,6 +337,21 @@ def select_human_panel(
         remainder,
         key=lambda record: (_seeded_record_hash(record, seed, "pilot_remainder"), record.corpus, record.record_id),
     )
+    if pilot_per_corpus is not None:
+        quotas = {str(corpus): int(value) for corpus, value in pilot_per_corpus.items()}
+        if set(quotas) != set(corpora) or sum(quotas.values()) != pilot_total:
+            raise ValueError("Pilot corpus quotas must cover four corpora and sum to the pilot cap")
+        if any(value < minimum_pilot_per_corpus for value in quotas.values()):
+            raise ValueError("Pilot corpus quota is below its minimum")
+        pilot = tuple(
+            record
+            for corpus in corpora
+            for record in [row for row in global_order if row.corpus == corpus][:quotas[corpus]]
+        )
+        counts = {corpus: sum(record.corpus == corpus for record in pilot) for corpus in corpora}
+        if counts != quotas:
+            raise ValueError(f"Pilot shortfall for locked corpus quotas: {counts}")
+        return tuple(calibration), pilot
     if pilot_total % len(corpora) == 0:
         balanced_per_corpus = pilot_total // len(corpora)
         if balanced_per_corpus < minimum_pilot_per_corpus:
@@ -523,6 +539,8 @@ def prepare_pilot_manifest(
     endpoint_revisions: Mapping[str, str] | None = None,
     candidate_token_counts: Mapping[str, Mapping[str, Mapping[str, int] | Sequence[int]]] | None = None,
     token_cap: int = 460,
+    max_paired_target_words: int | None = None,
+    pilot_per_corpus: Mapping[str, int] | None = None,
 ) -> dict[str, object]:
     """Create the locked, group-disjoint pilot challenge manifest.
 
@@ -531,7 +549,15 @@ def prepare_pilot_manifest(
     so rerunning preparation cannot silently draw a different panel.
     """
     records = read_canonical_table(table)
-    human = tuple(record for record in records if record.is_human)
+    if max_paired_target_words is not None and max_paired_target_words <= 0:
+        raise ValueError("Maximum paired target words must be positive")
+    human = tuple(
+        record for record in records
+        if record.is_human and (
+            max_paired_target_words is None
+            or len(_base_text(record.text).split()) <= max_paired_target_words
+        )
+    )
     if not human:
         raise ValueError("Pilot preparation requires human calibration/pilot candidates")
     explicit_cal = tuple(record for record in human if record.partition.casefold() == "calibration")
@@ -539,8 +565,8 @@ def prepare_pilot_manifest(
     used: set[str] = set()
     if calibration_cap == len(DEV_CORPORA) * CALIBRATION_PER_CORPUS and pilot_cap == PILOT_HUMAN_CAP:
         eligible_records = []
-        for record in records:
-            if not record.is_human or record.corpus not in DEV_CORPORA:
+        for record in human:
+            if record.corpus not in DEV_CORPORA:
                 continue
             try:
                 build_reflow_variants(record.text, width=width, block_size=block_size)
@@ -556,7 +582,7 @@ def prepare_pilot_manifest(
             eligible_records.append(record)
         calibration, pilot = select_human_panel(
             eligible_records, seed=seed, calibration_per_corpus=CALIBRATION_PER_CORPUS,
-            pilot_total=pilot_cap,
+            pilot_total=pilot_cap, pilot_per_corpus=pilot_per_corpus,
         )
     elif explicit_cal or explicit_pilot:
         calibration = explicit_cal
@@ -604,6 +630,10 @@ def prepare_pilot_manifest(
         "schema_version": SCHEMA_VERSION,
         "stage": PILOT_STAGE,
         "seed": int(seed),
+        "max_paired_target_words": max_paired_target_words,
+        "pilot_per_corpus": None if pilot_per_corpus is None else {
+            str(corpus): int(value) for corpus, value in sorted(pilot_per_corpus.items())
+        },
         "source_table_sha256": _sha256(canonical_rows),
         "candidate_order": "corpus,group_id,record_id",
         "caps": {"calibration_records": int(calibration_cap), "pilot_records": int(pilot_cap)},
@@ -951,6 +981,11 @@ def import_generation_outputs(
             raise ValueError(f"Generated output violates frozen length tolerance: {request_id}")
         if re.search(r"[.!?][\"')\]]*$", text.strip()) is None:
             raise ValueError(f"Generated output is not a complete passage: {request_id}")
+        selected_word_count = int(row.get("selected_word_count", output_word_count) or output_word_count)
+        raw_word_count = int(row.get("raw_word_count", selected_word_count) or selected_word_count)
+        prefix_rank = int(row.get("prefix_rank", 0) or 0)
+        if selected_word_count != output_word_count or raw_word_count < selected_word_count or prefix_rank < 0:
+            raise ValueError(f"Generation prefix provenance mismatch: {request_id}")
         variants = build_reflow_variants(text, probes=PROBES)
         by_variant = {variant.variant_id: variant for variant in variants}
         panel_counts = None
@@ -975,6 +1010,9 @@ def import_generation_outputs(
             "generator_revision": str(request["generator_revision"]),
             "target_length": int(request["target_length"]),
             "output_word_count": output_word_count,
+            "raw_word_count": raw_word_count,
+            "prefix_rank": prefix_rank,
+            "prefix_used": bool(int(row.get("prefix_used", raw_word_count != selected_word_count) or 0)),
             "attempt": attempt,
             "base_text_sha256": _text_sha256(_base_text(text)),
             "non_whitespace_sha256": _non_whitespace_sha256(text),

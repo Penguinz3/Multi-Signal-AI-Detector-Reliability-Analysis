@@ -30,7 +30,13 @@
   "pilot": {
     "human_groups_total": 5000,
     "human_groups_min_per_corpus": 1000,
-    "human_groups_per_corpus": 1250,
+    "max_paired_target_words": 300,
+    "human_groups_by_corpus": {
+      "asap_aes": 1400,
+      "blog_authorship": 1000,
+      "stack_exchange": 1200,
+      "wikitext_103": 1400
+    },
     "generator_families_required": 3,
     "ai_outputs_per_human_group": 1,
     "manual_validation_examples_per_probe": 300,

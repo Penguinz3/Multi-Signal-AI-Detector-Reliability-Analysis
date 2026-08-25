@@ -483,6 +483,7 @@ def _protocol_binding(paths: DeferralPaths, config: Path, generation_spec: Path)
         "prepare_inputs": repository_root / "tools" / "prepare_deferral_inputs.py",
         "generation_runner": repository_root / "tools" / "run_deferral_generation.py",
         "scoring_runner": repository_root / "tools" / "run_deferral_scoring.py",
+        "abort_receipts": repository_root / "docs" / "selective_deferral_abort_receipts.json",
     }
     return {
         "stage": "selective_deferral_protocol_binding",
@@ -522,6 +523,8 @@ def prepare_deferral(args: argparse.Namespace) -> None:
         endpoint_revisions={endpoint: SPECS[endpoint].revision for endpoint in ENDPOINT_ROLES},
         candidate_token_counts=token_counts,
         token_cap=int(config["common_token_ceiling"]),
+        max_paired_target_words=int(config["pilot"]["max_paired_target_words"]),
+        pilot_per_corpus=config["pilot"]["human_groups_by_corpus"],
     )
     selected_ids = {str(row["record_id"]) for row in manifest["pilot"]}
     lock_human_token_panels(
