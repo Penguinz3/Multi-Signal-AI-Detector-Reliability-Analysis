@@ -173,16 +173,30 @@ def _fit_word_envelope(
     text: str, *, target_length: int, min_word_count: int, max_word_count: int,
 ) -> str:
     """Keep a valid passage or remove only an overlong/incomplete suffix."""
+    candidates = _word_envelope_candidates(
+        text, target_length=target_length, min_word_count=min_word_count,
+        max_word_count=max_word_count,
+    )
+    return candidates[0] if candidates else _passage_only(text)
+
+
+def _word_envelope_candidates(
+    text: str, *, target_length: int, min_word_count: int, max_word_count: int,
+) -> tuple[str, ...]:
+    """Return complete sentence prefixes ordered by paired-length proximity."""
     value = _passage_only(text)
-    if _word_count(value) <= max_word_count and _is_complete_passage(value):
-        return value
-    candidates = []
+    candidates: list[tuple[int, int, str]] = []
+    seen: set[str] = set()
+    if min_word_count <= _word_count(value) <= max_word_count and _is_complete_passage(value):
+        candidates.append((abs(_word_count(value) - target_length), -_word_count(value), value))
+        seen.add(value)
     for match in re.finditer(r"[.!?][\"')\]]*(?=\s|$)", value):
         prefix = value[:match.end()].strip()
         count = _word_count(prefix)
-        if min_word_count <= count <= max_word_count:
+        if min_word_count <= count <= max_word_count and prefix not in seen:
             candidates.append((abs(count - target_length), -count, prefix))
-    return min(candidates)[2] if candidates else value
+            seen.add(prefix)
+    return tuple(row[2] for row in sorted(candidates))
 
 
 class HuggingFaceBackend:
@@ -372,18 +386,18 @@ def run_generation(
             accepted = None
             for attempt in range(request.retry + 1):
                 seed = request_seed(request.seed, request.request_id, attempt)
-                text = _fit_word_envelope(
-                    backend.generate(
-                        request.prompt, seed=seed, target_length=request.target_length,
-                        min_word_count=request.min_word_count,
-                        max_word_count=request.max_word_count, decoding=request.decoding,
-                    ),
+                raw_text = backend.generate(
+                    request.prompt, seed=seed, target_length=request.target_length,
+                    min_word_count=request.min_word_count,
+                    max_word_count=request.max_word_count, decoding=request.decoding,
+                )
+                candidates = _word_envelope_candidates(
+                    raw_text,
                     target_length=request.target_length,
                     min_word_count=request.min_word_count,
                     max_word_count=request.max_word_count,
                 )
-                count = _word_count(text)
-                if request.min_word_count <= count <= request.max_word_count and _is_complete_passage(text):
+                for text in candidates:
                     try:
                         token_counts = panel_counter(text) if panel_counter is not None else None
                     except ValueError:
@@ -400,6 +414,8 @@ def run_generation(
                             f"{rate:.3f}/s; ETA {remaining / 3600:.1f}h",
                             flush=True,
                         )
+                    break
+                if accepted is not None:
                     break
             if accepted is None:
                 raise GenerationFailure(

@@ -68,5 +68,5 @@
   "target_length": "paired_human",
   "length_tolerance_fraction": 0.1,
   "length_tolerance_min_words": 15,
-  "output_fitting_policy": "nearest_complete_sentence_prefix_within_envelope"
+  "output_fitting_policy": "nearest_token-valid_complete_sentence_prefix_within_envelope"
 }

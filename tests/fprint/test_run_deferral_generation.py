@@ -141,6 +141,37 @@ class RunDeferralGenerationTests(unittest.TestCase):
             self.assertEqual(rows[0]["attempt"], 1)
             self.assertEqual(json.loads(rows[0]["token_counts"])["radar"]["original"], 5)
 
+    def test_nearest_token_valid_sentence_prefix_is_used_without_retry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            requests = root / "generation_requests.csv"
+            _request_csv(requests, [{
+                "request_id": "r", "record_id": "human", "corpus": "asap_aes",
+                "generator_family": "fake", "generator_revision": "rev",
+                "prompt": "Write.", "prompt_sha256": "x", "seed": 1, "retry": 0,
+                "target_length": 8, "min_word_count": 4, "max_word_count": 12,
+                "decoding": "{}",
+            }])
+
+            class Sentences(FakeBackend):
+                def generate(self, *args, **kwargs):
+                    self.calls.append((args[0], kwargs["seed"]))
+                    return "One two three four. Five six seven eight. Nine ten eleven twelve."
+
+            def panel_counter(text):
+                if len(text.split()) > 8:
+                    raise ValueError("transformed view truncates")
+                return {"radar": {"original": len(text.split())}}
+
+            backend = Sentences("fake", "rev")
+            rows = run_generation(
+                requests, root / "outputs.csv", root / "checkpoint.jsonl",
+                backend_factory=lambda f, r: backend, panel_counter=panel_counter,
+            )
+            self.assertEqual(rows[0]["text"], "One two three four. Five six seven eight.")
+            self.assertEqual(rows[0]["attempt"], 0)
+            self.assertEqual(len(backend.calls), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -98,11 +98,21 @@ request, revision, decoding settings, retry policy, length envelope, and
 provenance. An output is accepted only when it ends as a complete passage and
 its original plus all three reflow variants jointly pass the pinned RADAR and
 MAGE tokenizer ceiling; failure of any view rejects that generation attempt.
-If a raw generation exceeds its locked word envelope or ends with an incomplete
-suffix, the runner selects the complete-sentence prefix nearest the paired
-target that is still inside the envelope. It never crops below the minimum,
-invents a sentence ending, or uses detector scores to select text; outputs
-without a valid prefix are retried.
+If a raw generation exceeds its locked word envelope, ends with an incomplete
+suffix, or its nearest-length prefix exceeds either tokenizer ceiling, the
+runner selects the nearest complete-sentence prefix that satisfies both the
+word envelope and the pinned RADAR/MAGE token ceilings. It never crops below
+the minimum, invents a sentence ending, or uses detector scores to select text;
+outputs without a valid prefix are retried.
+
+The first locked execution root was stopped after four generated passages and
+before any detector score was computed. The fifth request exhausted its three
+attempts because the nearest-length prefixes used 473--495 RADAR tokens even
+though earlier complete prefixes remained inside the frozen word envelope and
+token ceiling. That root remains preserved as an aborted pre-outcome run. This
+score-blind fitting correction was committed before creating a fresh execution
+root and does not alter the human selection, prompts, seeds, retry count,
+threshold, probes, models, or success gates.
 
 ## Conditional scoring
 
