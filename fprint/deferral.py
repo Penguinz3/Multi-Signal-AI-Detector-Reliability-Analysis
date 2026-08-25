@@ -692,8 +692,8 @@ def _render_generation_prompt(
         )
     except (KeyError, ValueError) as error:
         raise ValueError("Prompt template may use only topic and frozen length fields") from error
-    if "{" in prompt or "}" in prompt or not prompt.strip():
-        raise ValueError("Prompt template contains an unresolved field")
+    if not prompt.strip():
+        raise ValueError("Rendered generation prompt is empty")
     return prompt
 
 

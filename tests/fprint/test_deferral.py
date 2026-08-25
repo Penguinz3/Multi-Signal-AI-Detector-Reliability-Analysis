@@ -163,6 +163,15 @@ class DeferralWorklistTests(unittest.TestCase):
 
 
 class DeferralGenerationTests(unittest.TestCase):
+    def test_topic_may_contain_literal_braces(self):
+        from fprint.deferral import _render_generation_prompt
+
+        prompt = _render_generation_prompt(
+            "Write about {topic} in {target_length} words ({min_word_count}-{max_word_count}).",
+            "sets such as {1, 2, 3}", 25, 20, 30,
+        )
+        self.assertIn("{1, 2, 3}", prompt)
+
     def _manifest(self, temporary):
         paths = DeferralPaths.from_root(Path(temporary))
         prepare_pilot_manifest(
