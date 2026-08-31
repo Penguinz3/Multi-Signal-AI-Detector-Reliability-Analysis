@@ -350,17 +350,25 @@ def run_generation(
     backend_factory: Callable[[str, str], GenerationBackend] | None = None,
     lock_verifier: Callable[[], object] | None = None,
     panel_counter: Callable[[str], Mapping[str, object]] | None = None,
+    continue_on_failure: bool = False,
+    failure_log: Path | str | None = None,
 ) -> tuple[dict[str, object], ...]:
     """Generate all locked requests, resuming from accepted checkpoint rows."""
+    if continue_on_failure != (failure_log is not None):
+        raise ValueError("Screening mode requires both continue_on_failure and failure_log")
     if lock_verifier is not None:
         lock_verifier()
     requests = read_locked_requests(requests_csv)
     request_by_id = {request.request_id: request for request in requests}
     checkpoint_path = Path(checkpoint)
     completed = _load_checkpoint(checkpoint_path)
+    failures = _load_checkpoint(Path(failure_log)) if failure_log is not None else {}
     unknown = set(completed) - set(request_by_id)
-    if unknown:
-        raise ValueError(f"Checkpoint contains unknown requests: {sorted(unknown)[:3]}")
+    unknown_failures = set(failures) - set(request_by_id)
+    if unknown or unknown_failures:
+        raise ValueError(f"Checkpoint contains unknown requests: {sorted(unknown | unknown_failures)[:3]}")
+    if set(completed) & set(failures):
+        raise ValueError("A request cannot be both accepted and generation-infeasible")
     for request_id, row in completed.items():
         request = request_by_id[request_id]
         if str(row.get("generator_family")) != request.generator_family or str(row.get("generator_revision")) != request.generator_revision or int(row.get("retry", -1)) != request.retry:
@@ -382,6 +390,15 @@ def run_generation(
                 actual_counts = json.loads(actual_counts) if actual_counts else None
             if actual_counts is None or json.dumps(actual_counts, sort_keys=True) != expected_counts:
                 raise ValueError(f"Checkpoint token panel mismatch: {request_id}")
+    for request_id, row in failures.items():
+        request = request_by_id[request_id]
+        if (
+            str(row.get("record_id")) != request.record_id
+            or str(row.get("generator_family")) != request.generator_family
+            or str(row.get("generator_revision")) != request.generator_revision
+            or int(row.get("attempts", -1)) != request.retry + 1
+        ):
+            raise ValueError(f"Failure-log provenance mismatch: {request_id}")
     factory = backend_factory or (lambda family, revision: HuggingFaceBackend(family, revision))
     all_rows: dict[str, dict[str, object]] = dict(completed)
     started = time.monotonic()
@@ -389,12 +406,13 @@ def run_generation(
     print(f"Generation progress: {len(all_rows)}/{total} accepted", flush=True)
     grouped: dict[tuple[str, str], list[LockedRequest]] = {}
     for request in requests:
-        if request.request_id not in completed:
+        if request.request_id not in completed and request.request_id not in failures:
             grouped.setdefault((request.generator_family, request.generator_revision), []).append(request)
     for (family, revision), batch in grouped.items():
         backend = factory(family, revision)
         for request in batch:
             accepted = None
+            diagnostics = []
             for attempt in range(request.retry + 1):
                 seed = request_seed(request.seed, request.request_id, attempt)
                 raw_text = backend.generate(
@@ -409,11 +427,13 @@ def run_generation(
                     max_word_count=request.max_word_count,
                 )
                 raw_word_count = _word_count(_passage_only(raw_text))
+                token_valid_candidates = 0
                 for prefix_rank, text in enumerate(candidates):
                     try:
                         token_counts = panel_counter(text) if panel_counter is not None else None
                     except ValueError:
                         continue
+                    token_valid_candidates += 1
                     accepted = _csv_row(
                         request, text, attempt, seed, token_counts,
                         raw_word_count=raw_word_count, prefix_rank=prefix_rank,
@@ -430,12 +450,30 @@ def run_generation(
                             flush=True,
                         )
                     break
+                diagnostics.append({
+                    "attempt": attempt,
+                    "seed": seed,
+                    "raw_word_count": raw_word_count,
+                    "candidate_word_counts": [_word_count(text) for text in candidates],
+                    "token_valid_candidates": token_valid_candidates,
+                })
                 if accepted is not None:
                     break
             if accepted is None:
-                raise GenerationFailure(
-                    f"No output within locked word envelope after {request.retry + 1} attempts: {request.request_id}"
-                )
+                message = f"No output within locked word envelope after {request.retry + 1} attempts: {request.request_id}"
+                if not continue_on_failure:
+                    raise GenerationFailure(message)
+                failure_row = {
+                    "request_id": request.request_id,
+                    "record_id": request.record_id,
+                    "generator_family": request.generator_family,
+                    "generator_revision": request.generator_revision,
+                    "attempts": request.retry + 1,
+                    "diagnostics": diagnostics,
+                    "reason": message,
+                }
+                _append_checkpoint(Path(failure_log), failure_row)
+                failures[request.request_id] = failure_row
         del backend
         gc.collect()
         try:
@@ -444,7 +482,11 @@ def run_generation(
                 torch.cuda.empty_cache()
         except ImportError:
             pass
-    ordered = tuple(all_rows[request.request_id] for request in requests)
+    ordered = tuple(all_rows[request.request_id] for request in requests if request.request_id in all_rows)
+    if len(ordered) + len(failures) != total:
+        raise RuntimeError("Generation screening did not account for every locked request")
+    if failures:
+        return ordered
     output_path = Path(output_csv)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", newline="", dir=output_path.parent, delete=False) as handle:
@@ -469,6 +511,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--generation-spec", type=Path, help="Protocol-bound generator specification with artifact hashes")
     parser.add_argument("--mage-repo", type=Path, help="Pinned MAGE repository used for atomic token-panel checks")
     parser.add_argument("--fake", action="store_true", help="Use the deterministic test backend")
+    parser.add_argument("--continue-on-failure", action="store_true", help="Score-blind screening: log exhausted requests and continue")
+    parser.add_argument("--failure-log", type=Path, help="Append-only JSONL for exhausted screening requests")
     args = parser.parse_args(argv)
     specifications = {}
     if not args.fake:
@@ -522,8 +566,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     rows = run_generation(
         args.requests, args.output, args.checkpoint, backend_factory=factory,
         lock_verifier=lock_verifier, panel_counter=panel_counter,
+        continue_on_failure=args.continue_on_failure, failure_log=args.failure_log,
     )
-    print(json.dumps({"completed": len(rows), "output": str(args.output)}, sort_keys=True))
+    print(json.dumps({
+        "completed": len(rows),
+        "failed": len(_load_checkpoint(args.failure_log)) if args.failure_log else 0,
+        "output": str(args.output) if args.output.exists() else None,
+    }, sort_keys=True))
 
 
 if __name__ == "__main__":

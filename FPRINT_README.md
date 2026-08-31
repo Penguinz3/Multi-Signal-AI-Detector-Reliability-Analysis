@@ -135,10 +135,13 @@ narrower question: among passages that RADAR already accuses, do its signed
 responses to three character-preserving reflow transformations help rank human
 false accusations above correctly accused AI passages?
 
-The active corrected lane uses `F:\Research\FPRINT-selective-deferral-v3` and
-reuses the read-only inputs/models under `F:\Research\FPRINT-selective-deferral`.
-The original and v2 roots preserve the four- and 66-output pre-score aborted
-executions; neither contributes pilot records. The active lane does
+The v3 lane at `F:\Research\FPRINT-selective-deferral-v3` is preserved after a
+2,781-output pre-score generation failure. A separate score-blind screening
+lane finishes the remaining locked requests and records all generation-only
+failures before one final v4 replacement lock is created. The original, v2,
+and v3 roots preserve the four-, 66-, and 2,781-output aborted executions;
+none contributes detector outcomes. The eventual v4 lane will reuse the
+read-only inputs/models under `F:\Research\FPRINT-selective-deferral` and does
 not modify the completed forecast or fault-audit artifacts. RADAR is the sole
 fingerprint endpoint. MAGE is an expected-invariance preprocessing control, and
 LogRank supplies an original-score disagreement baseline only. Local BF16

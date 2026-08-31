@@ -134,6 +134,21 @@ four corpus-specific prompt genres at the 300-word boundary. All 12 cells
 passed on attempt zero; selected lengths were 289--309 words and the maximum
 four-view token count was 451. Stress texts were never retained or scored.
 
+The v3 execution later stopped after 2,781 accepted passages when one
+190-word Stack Exchange/Granite request exhausted its three locked attempts
+without a complete output inside the 171--209 word envelope. No detector was
+scored. The v3 root and checkpoint are preserved as an aborted pre-outcome
+run. Before any further pilot output or detector score, the remaining locked
+v3 requests are run once in a separate score-blind feasibility-screening lane.
+That lane retains successful texts, records every exhausted request in an
+append-only failure log, and cannot emit a final pilot panel. After the screen
+finishes, one v4 amendment will replace all and only generation-infeasible
+pairs using a deterministic, hash-ranked, corpus-matched reserve rule frozen
+before replacement generation. Compatible successful outputs may be reused
+only after their request provenance and token panels are revalidated against
+the v4 locks. Detector settings, probes, thresholds, models, evaluation, and
+success gates remain unchanged.
+
 ## Conditional scoring
 
 The frozen RADAR threshold is the empirical 95th percentile of the independent

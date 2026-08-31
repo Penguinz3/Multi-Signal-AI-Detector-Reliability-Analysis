@@ -36,6 +36,23 @@
         [[332, 476]]
       ],
       "reason": "No complete prefix jointly passed the frozen word envelope and 460-token panel ceiling."
+    },
+    {
+      "run_id": "selective_deferral_v3",
+      "status": "aborted_preoutcome",
+      "accepted_generation_rows": 2781,
+      "detector_score_rows": 0,
+      "software_commit": "c0aa4367ba1af95197ec0f643534d55076bd8454",
+      "checkpoint_sha256": "e41066dd0226850def6abcc5c907fc7b3555023c55c1fe0cace0c3df09216e2f",
+      "pilot_lock_sha256": "a18d430950ef55ddd2a2f5b37726d14064b810b4dfb429eea1c165843659ecab",
+      "generation_lock_sha256": "bdb4dbf5aa35bbfec6a7e5e2c74eed49e2f7717a0cd8ca6996112e2a2d823599",
+      "protocol_binding_sha256": "4071893e8970ccf7c13b6dc4a2a423f6c7ee9b06dc3d89cef36b48cdb70bf940",
+      "failed_request_id": "85d5ea3e988d60ce4900eaa5085bfd39b209b6274084ececf27ecac50d3f32ff",
+      "record_id": "stack_exchange:172218:000",
+      "generator_family": "ibm-granite/granite-3.3-2b-instruct",
+      "target_words": 190,
+      "word_envelope": [171, 209],
+      "reason": "No complete output satisfied the locked word envelope after three attempts. The run stopped before detector scoring."
     }
   ]
 }

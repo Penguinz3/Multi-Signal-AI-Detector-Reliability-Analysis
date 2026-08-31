@@ -113,6 +113,45 @@ class RunDeferralGenerationTests(unittest.TestCase):
                 run_generation(requests, root / "outputs.csv", root / "checkpoint.jsonl", backend_factory=lambda f, r: backend)
             self.assertEqual(len(backend.calls), 2)
 
+    def test_score_blind_screening_logs_failure_and_continues(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            requests = root / "generation_requests.csv"
+            common = {
+                "record_id": "human", "corpus": "asap_aes", "generator_family": "fake",
+                "generator_revision": "rev", "prompt": "Write.", "prompt_sha256": "x",
+                "seed": 1, "retry": 0, "target_length": 3,
+                "min_word_count": 3, "max_word_count": 3, "decoding": "{}",
+            }
+            _request_csv(requests, [
+                {"request_id": "bad", **common},
+                {"request_id": "good", **common},
+            ])
+
+            class OneFailure(FakeBackend):
+                def generate(self, prompt, *, seed, **kwargs):
+                    self.calls.append((prompt, seed))
+                    return "short" if len(self.calls) == 1 else "one two three."
+
+            failure_log = root / "failures.jsonl"
+            rows = run_generation(
+                requests, root / "outputs.csv", root / "checkpoint.jsonl",
+                backend_factory=lambda f, r: OneFailure(f, r),
+                continue_on_failure=True, failure_log=failure_log,
+            )
+            self.assertEqual([row["request_id"] for row in rows], ["good"])
+            failure = json.loads(failure_log.read_text(encoding="utf-8"))
+            self.assertEqual(failure["request_id"], "bad")
+            self.assertEqual(failure["diagnostics"][0]["raw_word_count"], 1)
+            self.assertFalse((root / "outputs.csv").exists())
+
+            resumed = run_generation(
+                requests, root / "outputs.csv", root / "checkpoint.jsonl",
+                backend_factory=lambda f, r: (_ for _ in ()).throw(AssertionError("must not reload")),
+                continue_on_failure=True, failure_log=failure_log,
+            )
+            self.assertEqual(len(resumed), 1)
+
     def test_token_panel_rejects_attempt_atomically_and_is_checkpointed(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
