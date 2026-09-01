@@ -138,16 +138,25 @@ The v3 execution later stopped after 2,781 accepted passages when one
 190-word Stack Exchange/Granite request exhausted its three locked attempts
 without a complete output inside the 171--209 word envelope. No detector was
 scored. The v3 root and checkpoint are preserved as an aborted pre-outcome
-run. Before any further pilot output or detector score, the remaining locked
-v3 requests are run once in a separate score-blind feasibility-screening lane.
-That lane retains successful texts, records every exhausted request in an
-append-only failure log, and cannot emit a final pilot panel. After the screen
-finishes, one v4 amendment will replace all and only generation-infeasible
-pairs using a deterministic, hash-ranked, corpus-matched reserve rule frozen
-before replacement generation. Compatible successful outputs may be reused
-only after their request provenance and token panels are revalidated against
-the v4 locks. Detector settings, probes, thresholds, models, evaluation, and
-success gates remain unchanged.
+run. Before any detector score, the remaining locked v3 requests were run once
+in a separate score-blind feasibility-screening lane. That lane accounted for
+all 5,000 requests: 4,954 passed and 46 exhausted their locked attempts (20
+Stack Exchange and 26 WikiText; 44 Granite, one OLMo, and one SmolLM2). It
+retained successful texts, recorded every failure in an append-only log, and
+did not emit a final pilot panel.
+
+The single v4 amendment replaced all and only those 46 failed pairs. Reserves
+were required to come from an unused group in the same corpus, retain a full
+token-valid reflow panel, have a valid source topic, and fall within the failed
+request's frozen length tolerance; absolute length difference and then a
+seeded SHA-256 rank resolved selection. Generator family and corpus quotas were
+preserved one-for-one. The mean absolute target-length difference was 1.67
+words (maximum 16). All 4,954 compatible outputs passed independent provenance,
+seed, word-envelope, completeness, and stored token-panel checks; their JSONL
+checkpoint was copied byte-for-byte. The replacement mapping is locked at
+SHA-256 `cbc990d9b055122ad1f261207a953857e0defa6f39b50b7b48bcfb3d9d67dc4a`.
+Detector settings, probes, thresholds, models, evaluation, and success gates
+remain unchanged, and no detector was scored before the amendment lock.
 
 ## Conditional scoring
 

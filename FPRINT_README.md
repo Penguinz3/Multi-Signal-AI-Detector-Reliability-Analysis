@@ -137,11 +137,15 @@ false accusations above correctly accused AI passages?
 
 The v3 lane at `F:\Research\FPRINT-selective-deferral-v3` is preserved after a
 2,781-output pre-score generation failure. A separate score-blind screening
-lane finishes the remaining locked requests and records all generation-only
-failures before one final v4 replacement lock is created. The original, v2,
-and v3 roots preserve the four-, 66-, and 2,781-output aborted executions;
-none contributes detector outcomes. The eventual v4 lane will reuse the
-read-only inputs/models under `F:\Research\FPRINT-selective-deferral` and does
+lane accounted for all 5,000 locked requests: 4,954 passed and 46 exhausted
+their generation-only checks. The final v4 amendment at
+`F:\Research\FPRINT-selective-deferral-v4` replaces exactly those 46 pairs with
+deterministically selected, unused, same-corpus, close-length reserves while
+preserving corpus/generator quotas. Its migrated checkpoint is byte-identical
+to the completed screen checkpoint. The original, v2, and v3 roots preserve
+the four-, 66-, and 2,781-output aborted executions; none contributes detector
+outcomes. The v4 lane reuses the read-only inputs/models under
+`F:\Research\FPRINT-selective-deferral` and does
 not modify the completed forecast or fault-audit artifacts. RADAR is the sole
 fingerprint endpoint. MAGE is an expected-invariance preprocessing control, and
 LogRank supplies an original-score disagreement baseline only. Local BF16
@@ -171,37 +175,37 @@ python -m fprint prepare-deferral-pilot `
   --generation-spec deferral_generation_spec.json `
   --human-token-counts F:\Research\FPRINT-selective-deferral\inputs\human_token_counts.json
 
-python tools\run_deferral_generation.py `
-  --requests F:\Research\FPRINT-selective-deferral-v3\state\generation_requests.csv `
-  --output F:\Research\FPRINT-selective-deferral-v3\generation\accepted_outputs.csv `
-  --checkpoint F:\Research\FPRINT-selective-deferral-v3\generation\checkpoint.jsonl `
-  --study-root F:\Research\FPRINT-selective-deferral-v3 `
+python -m tools.run_deferral_generation `
+  --requests F:\Research\FPRINT-selective-deferral-v4\state\generation_requests.csv `
+  --output F:\Research\FPRINT-selective-deferral-v4\generation\accepted_outputs.csv `
+  --checkpoint F:\Research\FPRINT-selective-deferral-v4\generation\checkpoint.jsonl `
+  --study-root F:\Research\FPRINT-selective-deferral-v4 `
   --model-root F:\Research\FPRINT-selective-deferral\models `
   --generation-spec .\deferral_generation_spec.json `
   --mage-repo F:\Research\FPRINT\vendor\MAGE --device 0
 
 python -m fprint import-deferral-ai-panel `
-  --study-root F:\Research\FPRINT-selective-deferral-v3 `
-  --outputs F:\Research\FPRINT-selective-deferral-v3\generation\accepted_outputs.csv
+  --study-root F:\Research\FPRINT-selective-deferral-v4 `
+  --outputs F:\Research\FPRINT-selective-deferral-v4\generation\accepted_outputs.csv
 
 python -m fprint validate-deferral-probes `
-  --study-root F:\Research\FPRINT-selective-deferral-v3 --probe wrap_80 `
+  --study-root F:\Research\FPRINT-selective-deferral-v4 --probe wrap_80 `
   --text-table locked_pilot_texts.csv
 
 python -m fprint calibrate-deferral-thresholds `
-  --study-root F:\Research\FPRINT-selective-deferral-v3 `
+  --study-root F:\Research\FPRINT-selective-deferral-v4 `
   --score-table calibration_scores.csv
 
 python -m fprint score-deferral-originals `
-  --study-root F:\Research\FPRINT-selective-deferral-v3 `
+  --study-root F:\Research\FPRINT-selective-deferral-v4 `
   --score-table pilot_original_scores.csv
 
 python -m fprint score-deferral-positives `
-  --study-root F:\Research\FPRINT-selective-deferral-v3 `
+  --study-root F:\Research\FPRINT-selective-deferral-v4 `
   --score-table completed_conditional_scores.csv
 
 python -m fprint evaluate-deferral-pilot `
-  --study-root F:\Research\FPRINT-selective-deferral-v3 `
+  --study-root F:\Research\FPRINT-selective-deferral-v4 `
   --text-table locked_pilot_texts.csv
 ```
 
