@@ -152,6 +152,17 @@ LogRank supplies an original-score disagreement baseline only. Local BF16
 generation and detector scoring are resumable and use exact locked revisions;
 the table interfaces remain provider-neutral for later black-box endpoints.
 
+The v4 replacement run accepted 4,999 requests and exhausted one deterministic
+Stack Exchange/Granite request. A separately locked score-blind completion
+screen confirmed that this was the only generation-infeasible pair. The final
+analysis root is
+`F:\Research\FPRINT-selective-deferral-complete-case-final`: it contains 4,999
+one-to-one human/AI pairs and conditions the pilot on the preregistered
+generation-feasibility checks. It does not refill or rebalance the excluded
+pair. Its corpus counts are 1,400 ASAP, 1,000 Blog Authorship, 1,199 Stack
+Exchange, and 1,400 WikiText. The canonical generated-panel lock contains all
+4,999 AI passages, and no detector score existed when attrition was locked.
+
 The pilot protocol and its pre-outcome feasibility correction are frozen in
 `docs/selective_deferral_pilot_protocol.md`; numerical settings and gates are in
 `deferral_config.json`. No final scoring stage exists. A final protocol can be
@@ -185,27 +196,27 @@ python -m tools.run_deferral_generation `
   --mage-repo F:\Research\FPRINT\vendor\MAGE --device 0
 
 python -m fprint import-deferral-ai-panel `
-  --study-root F:\Research\FPRINT-selective-deferral-v4 `
-  --outputs F:\Research\FPRINT-selective-deferral-v4\generation\accepted_outputs.csv
+  --study-root F:\Research\FPRINT-selective-deferral-complete-case-final `
+  --outputs F:\Research\FPRINT-selective-deferral-complete-case-final\generation\accepted_outputs.csv
 
 python -m fprint validate-deferral-probes `
-  --study-root F:\Research\FPRINT-selective-deferral-v4 --probe wrap_80 `
+  --study-root F:\Research\FPRINT-selective-deferral-complete-case-final --probe wrap_80 `
   --text-table locked_pilot_texts.csv
 
 python -m fprint calibrate-deferral-thresholds `
-  --study-root F:\Research\FPRINT-selective-deferral-v4 `
+  --study-root F:\Research\FPRINT-selective-deferral-complete-case-final `
   --score-table calibration_scores.csv
 
 python -m fprint score-deferral-originals `
-  --study-root F:\Research\FPRINT-selective-deferral-v4 `
+  --study-root F:\Research\FPRINT-selective-deferral-complete-case-final `
   --score-table pilot_original_scores.csv
 
 python -m fprint score-deferral-positives `
-  --study-root F:\Research\FPRINT-selective-deferral-v4 `
+  --study-root F:\Research\FPRINT-selective-deferral-complete-case-final `
   --score-table completed_conditional_scores.csv
 
 python -m fprint evaluate-deferral-pilot `
-  --study-root F:\Research\FPRINT-selective-deferral-v4 `
+  --study-root F:\Research\FPRINT-selective-deferral-complete-case-final `
   --text-table locked_pilot_texts.csv
 ```
 

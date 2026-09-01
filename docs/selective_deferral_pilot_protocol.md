@@ -158,6 +158,26 @@ SHA-256 `cbc990d9b055122ad1f261207a953857e0defa6f39b50b7b48bcfb3d9d67dc4a`.
 Detector settings, probes, thresholds, models, evaluation, and success gates
 remain unchanged, and no detector was scored before the amendment lock.
 
+The v4 run accepted seven of its replacement requests and then stopped on a
+254-word Stack Exchange/Granite replacement that exhausted the same three
+locked attempts. A separately locked completion screen ran all 39 unfinished
+requests under the unchanged generation policy. It accounted for all 5,000
+requests as 4,999 accepted and one generation-infeasible; no detector was
+scored and the screening lane was forbidden from emitting a final panel.
+
+The final pilot is therefore a score-blind complete-case panel conditioned on
+the preregistered generation-feasibility checks. It excludes only request
+`fe89df78d3b66666eff7a1cfa1ade7f62c4cc1d82c88199c567b6ba5d28db500`
+and its paired human record `stack_exchange:30913:000`; it does not refill or
+rebalance that cell. The resulting 4,999 pairs contain 1,400 ASAP, 1,000 Blog
+Authorship, 1,199 Stack Exchange, and 1,400 WikiText records. The attrition lock
+hash is `674b76fc7026d618b7fe328db946ab54c0ff3bab8d7a072a02ab5e7e5a016e2e`.
+All accepted checkpoint rows were preserved, the canonical output CSV contains
+exactly 4,999 rows, and the generated-panel digest is
+`eb5a4c423a9e3398c0e64dd590a25926893faa794f10a9bcb1dbb1f295437acf`.
+This sample is not described as the original fixed 5,000-pair panel; every
+analysis must disclose its conditioning on generation feasibility.
+
 ## Conditional scoring
 
 The frozen RADAR threshold is the empirical 95th percentile of the independent
