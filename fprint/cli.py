@@ -16,7 +16,11 @@ from .operational import compare_runs, export_challenge, import_run, initialize_
 from .product import build_release_bundle, export_contracts, write_evaluation_html
 from .validation import lock_prospective_panel, prepare_prospective_validation, replay_operational_validation
 from .validation_evaluate import evaluate_prospective_validation
-from .validation_scoring import lock_scoring_protocol_from_database, score_validation_run
+from .validation_scoring import (
+    lock_scoring_integrity_amendment,
+    lock_scoring_protocol_from_database,
+    score_validation_run,
+)
 
 
 def prepare_conformance(args: argparse.Namespace) -> None:
@@ -116,6 +120,10 @@ def lock_scoring(args: argparse.Namespace) -> None:
 
 def score_prospective(args: argparse.Namespace) -> None:
     print(f"Locked prospective score run: {score_validation_run(args.validation_root, args.endpoint, args.condition_code, args.run_label, device=args.device, mage_repo=args.mage_repo)}")
+
+
+def amend_scoring_integrity(args: argparse.Namespace) -> None:
+    print(f"Locked pre-score integrity amendment: {lock_scoring_integrity_amendment(args.validation_root)}")
 
 
 def evaluate_prospective(args: argparse.Namespace) -> None:
@@ -238,6 +246,13 @@ def build_parser() -> argparse.ArgumentParser:
     scoring_lock.add_argument("--validation-root", type=Path, required=True)
     scoring_lock.add_argument("--reference-database", type=Path, required=True)
     scoring_lock.set_defaults(func=lock_scoring)
+
+    scoring_amendment = sub.add_parser(
+        "lock-operational-validation-integrity-amendment",
+        help="Bind legacy panel bytes before prospective inference",
+    )
+    scoring_amendment.add_argument("--validation-root", type=Path, required=True)
+    scoring_amendment.set_defaults(func=amend_scoring_integrity)
 
     validation_score = sub.add_parser(
         "score-operational-validation",

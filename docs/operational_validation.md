@@ -75,3 +75,9 @@ The audited baseline remains FP32. BF16 is intentionally one hidden precision
 change rather than a silent redefinition of the reference. Any missing score,
 failure, truncation, duplicate run, altered panel row, or mismatched lock stops
 the pipeline and prevents a completion artifact.
+
+The first scoring preflight exposed that the original panel lock froze row IDs
+and counts but omitted the `panel.csv` byte hash. No detector was loaded. A
+separate `lock-operational-validation-integrity-amendment` stage preserves the
+original locks and binds their exact panel bytes plus the corrected code before
+scoring; it refuses to run after any score row or completed run exists.

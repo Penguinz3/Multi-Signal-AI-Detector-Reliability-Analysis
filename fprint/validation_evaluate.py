@@ -121,6 +121,18 @@ def _load_panel(root: Path, manifest: Mapping[str, object], manifest_digest: str
         raise RuntimeError("Panel lock belongs to a different prospective manifest")
     panel_path = root / "panel.csv"
     expected_hash = panel_payload.get("panel_csv_sha256", panel_payload.get("panel_sha256"))
+    if not expected_hash:
+        amendment = verify_lock(root / "scoring_integrity_amendment.lock.json")["payload"]
+        if amendment.get("construct") != "prospective_scoring_integrity_amendment":
+            raise RuntimeError("Unsupported scoring integrity amendment")
+        if amendment.get("manifest_sha256") != manifest_digest:
+            raise RuntimeError("Integrity amendment belongs to another manifest")
+        if amendment.get("panel_lock_sha256") != panel_lock["sha256"]:
+            raise RuntimeError("Integrity amendment belongs to another panel lock")
+        protocol = verify_lock(root / "scoring_protocol.lock.json")
+        if amendment.get("scoring_protocol_sha256") != protocol["sha256"]:
+            raise RuntimeError("Integrity amendment belongs to another scoring protocol")
+        expected_hash = amendment.get("panel_csv_sha256")
     if not expected_hash or _sha256(panel_path) != expected_hash:
         raise RuntimeError("Panel CSV hash disagrees with its lock")
     with panel_path.open(encoding="utf-8-sig", newline="") as handle:

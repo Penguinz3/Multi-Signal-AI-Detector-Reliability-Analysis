@@ -39,6 +39,7 @@ SCHEMA_VERSION = 1
 RUN_LABELS = ("reference-a", "reference-b", "current")
 LEVELS = ("original", "low", "high")
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+INTEGRITY_AMENDMENT = "scoring_integrity_amendment.lock.json"
 
 
 SCHEMA = """
@@ -121,6 +122,27 @@ def _required_link(payload: Mapping[str, object], names: Sequence[str], expected
         raise RuntimeError(f"{label} must bind to the requested validation lock")
 
 
+def _panel_csv_hash(
+    root: Path, panel: Mapping[str, object], panel_sha: str,
+    manifest_sha: str, protocol_sha: str,
+) -> tuple[str, str | None]:
+    """Resolve an inline panel hash or a pre-score amendment for legacy locks."""
+    expected = panel.get("panel_csv_sha256", panel.get("panel_sha256"))
+    if expected:
+        return str(expected), None
+    amendment_path = root / INTEGRITY_AMENDMENT
+    amendment, amendment_sha = _lock(amendment_path)
+    if amendment.get("construct") != "prospective_scoring_integrity_amendment":
+        raise RuntimeError("Unsupported scoring integrity amendment")
+    _required_link(amendment, ("manifest_sha256",), manifest_sha, "Integrity amendment")
+    _required_link(amendment, ("panel_lock_sha256",), panel_sha, "Integrity amendment")
+    _required_link(amendment, ("scoring_protocol_sha256",), protocol_sha, "Integrity amendment")
+    expected = amendment.get("panel_csv_sha256")
+    if not expected:
+        raise RuntimeError("Integrity amendment lacks the panel CSV hash")
+    return str(expected), amendment_sha
+
+
 def _load_context(validation_root: Path, protocol_lock: Path) -> tuple[Path, dict, str, list[dict], dict, str, dict, str, dict, str]:
     root = Path(validation_root).resolve()
     manifest_path, panel_path, truth_path = (
@@ -144,9 +166,14 @@ def _load_context(validation_root: Path, protocol_lock: Path) -> tuple[Path, dic
     if str(protocol.get("baseline_precision", "fp32")).casefold() != "fp32":
         raise ValueError("Prospective reference scoring must use the frozen FP32 baseline")
     panel_csv = root / "panel.csv"
-    expected_panel_hash = panel.get("panel_csv_sha256", panel.get("panel_sha256"))
+    expected_panel_hash, amendment_sha = _panel_csv_hash(
+        root, panel, panel_sha, manifest_sha, protocol_sha,
+    )
     if not expected_panel_hash or _file_sha256(panel_csv) != expected_panel_hash:
         raise RuntimeError("Panel CSV disagrees with the panel lock")
+    if amendment_sha:
+        protocol = dict(protocol)
+        protocol["integrity_amendment_sha256"] = amendment_sha
     with panel_csv.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
     required = {"triplet_id", "probe", "original_text", "low_text", "high_text", "low_intensity", "high_intensity"}
@@ -246,6 +273,70 @@ def lock_scoring_protocol_from_database(validation_root: Path, reference_databas
         },
         frozen_empirical_cdf=cdf,
     )
+
+
+def lock_scoring_integrity_amendment(validation_root: Path) -> Path:
+    """Bind a legacy ID-only panel lock before any prospective scores exist."""
+    root = Path(validation_root).resolve()
+    target = root / INTEGRITY_AMENDMENT
+    if target.exists():
+        verify_lock(target)
+        return target
+    if any((root / "runs").glob("*.lock.json")):
+        raise RuntimeError("Integrity amendment must be locked before every score run")
+    database = root / "validation_scores.sqlite3"
+    if database.exists():
+        connection = sqlite3.connect(database)
+        try:
+            count = connection.execute("SELECT COUNT(*) FROM scores").fetchone()[0]
+        except sqlite3.Error:
+            count = 1
+        finally:
+            connection.close()
+        if count:
+            raise RuntimeError("Integrity amendment must be locked before any score rows")
+    manifest, manifest_sha = _lock(root / "manifest.lock.json")
+    panel, panel_sha = _lock(root / "panel.lock.json")
+    protocol, protocol_sha = _lock(root / "scoring_protocol.lock.json")
+    panel_path = root / "panel.csv"
+    with panel_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    locked_ids = [str(value) for value in panel.get("triplet_ids", ())]
+    if [str(row.get("triplet_id", "")) for row in rows] != locked_ids:
+        raise RuntimeError("Legacy panel table does not match its locked row order")
+    if any(
+        row.get("triplet_sha256") and _digest([
+            row["original_text"], row["low_text"], row["high_text"],
+            float(row["low_intensity"]), float(row["high_intensity"]),
+        ]) != row["triplet_sha256"]
+        for row in rows
+    ):
+        raise RuntimeError("Legacy panel triplet content hash mismatch")
+    repo = Path(__file__).resolve().parents[1]
+    commit = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    code_files = (
+        Path(__file__), Path(__file__).with_name("validation_evaluate.py"),
+        Path(__file__).with_name("validation.py"), Path(__file__).with_name("operational.py"),
+        Path(__file__).with_name("detectors.py"), Path(__file__).with_name("core.py"),
+    )
+    lock_forecasts(target, {
+        "schema_version": SCHEMA_VERSION,
+        "construct": "prospective_scoring_integrity_amendment",
+        "reason": "legacy_panel_lock_bound_ids_and_counts_but_not_panel_csv_bytes",
+        "created_before_scores": True,
+        "manifest_sha256": manifest_sha,
+        "panel_lock_sha256": panel_sha,
+        "scoring_protocol_sha256": protocol_sha,
+        "panel_csv_sha256": _file_sha256(panel_path),
+        "rows": len(rows),
+        "triplet_ids_sha256": _digest(locked_ids),
+        "code_commit": commit,
+        "code_sha256": {path.name: _file_sha256(path) for path in code_files},
+    })
+    return target
 
 
 def _condition(
@@ -676,6 +767,7 @@ def score_validation_run(
         "panel_sha256": panel_sha,
         "truth_sha256": truth_sha,
         "scoring_protocol_sha256": protocol_sha,
+        "integrity_amendment_sha256": protocol.get("integrity_amendment_sha256"),
         "endpoint": endpoint,
         "condition_code": condition_code,
         "run_label": run_label,
