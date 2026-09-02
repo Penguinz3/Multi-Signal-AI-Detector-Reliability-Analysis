@@ -20,8 +20,9 @@ estimate deployment accuracy, or identify the detector's exact internal change.
 The repository contains two deliberately separate layers:
 
 - **Operational beta:** a vendor-neutral, local reference/current workflow. Its
-  repeat-noise decision rule is transparent and fail-closed, but has not yet
-  been validated on real external vendor updates.
+  repeat-noise decision rule is transparent and fail-closed. A retrospective
+  replay reached 0.964 AUROC and 88.5% sensitivity with no unchanged false
+  alarms, but missed its per-endpoint gate; prospective validation is underway.
 - **Frozen research artifact:** controlled-fault experiments achieved 0.974
   macro AUROC and 94.8% sensitivity with no unchanged false alarms. Prospective
   confirmation achieved 0.933 AUROC and 86.6% sensitivity. Fault-family
@@ -67,7 +68,8 @@ python -m fprint compare-runs --audit-root <audit-directory> `
 ```
 
 Metadata must record `version`, `configuration`, `threshold_policy`, and
-`collected_at_utc`. Failed or truncated queries reject the complete run. The
+`collected_at_utc`. The score table must explicitly report `truncated` and
+`failure`; failed or truncated queries reject the complete run. The
 report contains aggregate deltas and hashes but no source passages. A noisy
 reference produces `inconclusive`; a detected departure produces `changed` and
 `revalidation_required: true`.
@@ -94,4 +96,5 @@ python -m pip install -r requirements.txt
 python -m unittest discover -s tests\fprint -p "test_*.py" -v
 ```
 
-See [production boundaries and release gates](docs/production_release.md).
+See [production boundaries and release gates](docs/production_release.md) and
+the [operational validation record](docs/operational_validation.md).

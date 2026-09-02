@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import bisect
 import csv
 import hashlib
 import json
@@ -142,6 +143,7 @@ def initialize_audit(
             "challenge_rows": len(rows),
             "triplets_by_probe": counts,
             "challenge_sha256": _file_sha256(challenge),
+            "feature_geometry": "within_run_empirical_rank",
             "decision_rule": {
                 "name": "paired_repeat_noise_v1",
                 "alpha": alpha,
@@ -192,6 +194,7 @@ def export_challenge(audit_root: Path, output_dir: Path) -> Path:
     try:
         shutil.copyfile(Path(audit_root).resolve() / "challenge.csv", staging / "challenge.csv")
         shutil.copyfile(Path(audit_root).resolve() / "scores_template.csv", staging / "scores_template.csv")
+        shutil.copyfile(Path(audit_root).resolve() / "manifest.lock.json", staging / "manifest.lock.json")
         staging.replace(output_dir)
     except Exception:
         shutil.rmtree(staging, ignore_errors=True)
@@ -219,8 +222,9 @@ def import_run(
     metadata = {field: str(metadata[field]).strip() for field in RUN_METADATA_FIELDS}
     with Path(scores_path).open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
-        if not reader.fieldnames or not {"challenge_id", "canonical_ai_score"}.issubset(reader.fieldnames):
-            raise ValueError("Score table requires challenge_id and canonical_ai_score")
+        required_fields = {"challenge_id", "canonical_ai_score", "truncated", "failure"}
+        if not reader.fieldnames or not required_fields.issubset(reader.fieldnames):
+            raise ValueError("Score table requires challenge_id, canonical_ai_score, truncated, and failure")
         scores = {}
         for row in reader:
             challenge_id = str(row.get("challenge_id", "")).strip()
@@ -229,7 +233,7 @@ def import_run(
             if str(row.get("failure", "")).strip():
                 raise ValueError(f"Failed detector query for {challenge_id}")
             truncated = str(row.get("truncated", "")).strip().casefold()
-            if truncated not in {"", "0", "false", "no"}:
+            if truncated not in {"0", "false", "no"}:
                 if truncated in {"1", "true", "yes"}:
                     raise ValueError(f"Truncated detector query for {challenge_id}")
                 raise ValueError(f"Invalid truncated value for {challenge_id}")
@@ -273,6 +277,11 @@ def _load_run(audit_root: Path, run_id: str, manifest_digest: str, expected_ids:
 
 
 def _triplet_features(challenge: Sequence[Mapping[str, str]], scores: Mapping[str, float]) -> list[dict]:
+    ordered_scores = sorted(scores.values())
+    ranks = {
+        challenge_id: (bisect.bisect_right(ordered_scores, score) - .5) / len(ordered_scores)
+        for challenge_id, score in scores.items()
+    }
     grouped: dict[str, list[Mapping[str, str]]] = defaultdict(list)
     for row in challenge:
         grouped[row["triplet_id"]].append(row)
@@ -281,13 +290,14 @@ def _triplet_features(challenge: Sequence[Mapping[str, str]], scores: Mapping[st
         by_level = {row["intensity"]: row for row in rows}
         if set(by_level) != set(LEVELS):
             raise RuntimeError(f"Triplet {triplet_id} is incomplete")
-        values = [scores[by_level[level]["challenge_id"]] for level in LEVELS]
+        raw_original = scores[by_level["original"]["challenge_id"]]
+        values = [ranks[by_level[level]["challenge_id"]] for level in LEVELS]
         intensities = [float(by_level[level]["intensity_value"]) for level in LEVELS]
         result.append({
             "triplet_id": triplet_id,
             "probe": by_level["original"]["probe"],
             "features": {
-                "original_score": values[0],
+                "original_score": raw_original,
                 "low_shift": values[1] - values[0],
                 "high_shift": values[2] - values[0],
                 "slope": slope(intensities, values),
@@ -333,48 +343,54 @@ th,td{{border-bottom:1px solid #8885;padding:.5rem;text-align:left}}.status{{fon
 """
 
 
-def compare_runs(
-    audit_root: Path,
-    reference_run_ids: Sequence[str],
-    current_run_id: str,
-    output_dir: Path,
-) -> Path:
-    if len(reference_run_ids) != 2 or len(set(reference_run_ids)) != 2:
-        raise ValueError("Exactly two distinct reference runs are required")
-    manifest, manifest_digest, challenge = _load_audit(audit_root)
+def analyze_score_maps(
+    manifest: Mapping[str, object],
+    challenge: Sequence[Mapping[str, str]],
+    reference_maps: Sequence[Mapping[str, float]],
+    current_map: Mapping[str, float],
+) -> dict:
+    """Apply the operational alarm rule without filesystem packaging."""
+    if len(reference_maps) != 2:
+        raise ValueError("Exactly two reference score maps are required")
     expected_ids = {row["challenge_id"] for row in challenge}
-    references = [_load_run(audit_root, run_id, manifest_digest, expected_ids) for run_id in reference_run_ids]
-    current = _load_run(audit_root, current_run_id, manifest_digest, expected_ids)
-    if any(run.get("role") != "reference" for run in references) or current.get("role") != "current":
-        raise ValueError("Run roles do not match the requested comparison")
+    if any(set(scores) != expected_ids for scores in (*reference_maps, current_map)):
+        raise ValueError("Every score map must contain the complete challenge")
     reference_noise = [
-        abs(references[0]["score_map"][challenge_id] - references[1]["score_map"][challenge_id])
+        abs(reference_maps[0][challenge_id] - reference_maps[1][challenge_id])
         for challenge_id in sorted(expected_ids)
     ]
     reference_noise_p95 = _quantile(reference_noise, .95)
-    feature_sets = [_triplet_features(challenge, run["score_map"]) for run in (*references, current)]
+    feature_sets = [_triplet_features(challenge, scores) for scores in (*reference_maps, current_map)]
     indexed = [
         {(row["triplet_id"], row["probe"]): row["features"] for row in rows}
         for rows in feature_sets
     ]
     rule = manifest["decision_rule"]
-    cells: dict[str, dict[str, dict]] = {probe: {} for probe in manifest["probes"]}
-    total_cells = len(manifest["probes"]) * len(FEATURES)
+    cells: dict[str, dict[str, dict]] = {str(probe): {} for probe in manifest["probes"]}
+    total_cells = len(cells) * len(FEATURES)
     adjusted_alpha = float(rule["alpha"]) / total_cells
     all_feature_repeat_deltas = []
-    for probe in manifest["probes"]:
+    for probe in cells:
         keys = sorted(key for key in indexed[0] if key[1] == probe)
+        if not keys:
+            raise ValueError(f"Challenge has no triplets for {probe}")
         for feature in FEATURES:
             repeat_deltas, current_deltas = [], []
             for key in keys:
-                left, right, now = (float(index[ key ][feature]) for index in indexed)
+                left, right, now = (float(index[key][feature]) for index in indexed)
                 repeat_deltas.append(abs(left - right))
                 current_deltas.append(abs(now - (left + right) / 2))
             all_feature_repeat_deltas.extend(repeat_deltas)
             tolerance = float(rule["absolute_tolerance"])
             multiplier = float(rule["noise_multiplier"])
-            affected = [current_delta > max(tolerance, multiplier * repeat_delta) for current_delta, repeat_delta in zip(current_deltas, repeat_deltas)]
-            wins = sum(current_delta > repeat_delta + tolerance for current_delta, repeat_delta in zip(current_deltas, repeat_deltas))
+            affected = [
+                current_delta > max(tolerance, multiplier * repeat_delta)
+                for current_delta, repeat_delta in zip(current_deltas, repeat_deltas)
+            ]
+            wins = sum(
+                current_delta > repeat_delta + tolerance
+                for current_delta, repeat_delta in zip(current_deltas, repeat_deltas)
+            )
             p_value = _binomial_upper_tail(wins, len(keys))
             affected_fraction = sum(affected) / len(affected)
             median_current = statistics.median(current_deltas)
@@ -397,6 +413,36 @@ def compare_runs(
     reference_feature_noise_p95 = _quantile(all_feature_repeat_deltas, .95)
     unstable = max(reference_noise_p95, reference_feature_noise_p95) > float(rule["maximum_reference_noise"])
     status = "inconclusive" if unstable else "changed" if changed_cells else "unchanged"
+    return {
+        "status": status,
+        "revalidation_required": status != "unchanged",
+        "reference_noise_p95": reference_noise_p95,
+        "reference_feature_noise_p95": reference_feature_noise_p95,
+        "changed_cells": changed_cells,
+        "tested_cells": total_cells,
+        "decision_rule": rule,
+        "probe_results": cells,
+    }
+
+
+def compare_runs(
+    audit_root: Path,
+    reference_run_ids: Sequence[str],
+    current_run_id: str,
+    output_dir: Path,
+) -> Path:
+    if len(reference_run_ids) != 2 or len(set(reference_run_ids)) != 2:
+        raise ValueError("Exactly two distinct reference runs are required")
+    manifest, manifest_digest, challenge = _load_audit(audit_root)
+    expected_ids = {row["challenge_id"] for row in challenge}
+    references = [_load_run(audit_root, run_id, manifest_digest, expected_ids) for run_id in reference_run_ids]
+    current = _load_run(audit_root, current_run_id, manifest_digest, expected_ids)
+    if any(run.get("role") != "reference" for run in references) or current.get("role") != "current":
+        raise ValueError("Run roles do not match the requested comparison")
+    analysis = analyze_score_maps(
+        manifest, challenge,
+        [run["score_map"] for run in references], current["score_map"],
+    )
     report = {
         "schema_version": SCHEMA_VERSION,
         "construct": "operational_behavioral_conformance_report",
@@ -407,14 +453,7 @@ def compare_runs(
         "current_run": current_run_id,
         "reference_metadata": [run["metadata"] for run in references],
         "current_metadata": current["metadata"],
-        "status": status,
-        "revalidation_required": status != "unchanged",
-        "reference_noise_p95": reference_noise_p95,
-        "reference_feature_noise_p95": reference_feature_noise_p95,
-        "changed_cells": changed_cells,
-        "tested_cells": total_cells,
-        "decision_rule": rule,
-        "probe_results": cells,
+        **analysis,
         "claim_boundary": "This engineering-beta report identifies observable score and probe-response changes only. It does not determine authorship, estimate deployment accuracy, or identify an internal detector cause.",
     }
     output_dir = Path(output_dir).resolve()

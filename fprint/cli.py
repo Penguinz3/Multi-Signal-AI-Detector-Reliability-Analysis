@@ -14,6 +14,7 @@ from .conformance import (
 from .detectors import SPECS
 from .operational import compare_runs, export_challenge, import_run, initialize_audit
 from .product import build_release_bundle, export_contracts, write_evaluation_html
+from .validation import lock_prospective_panel, prepare_prospective_validation, replay_operational_validation
 
 
 def prepare_conformance(args: argparse.Namespace) -> None:
@@ -93,6 +94,18 @@ def import_operational_run(args: argparse.Namespace) -> None:
 
 def compare_operational(args: argparse.Namespace) -> None:
     print(f"Published operational report: {compare_runs(args.audit_root, args.reference, args.current, args.output_dir)}")
+
+
+def replay_operational(args: argparse.Namespace) -> None:
+    print(f"Published retrospective operational replay: {replay_operational_validation(args.audit_root, args.output_dir)}")
+
+
+def prepare_prospective(args: argparse.Namespace) -> None:
+    print(f"Locked prospective validation candidates: {prepare_prospective_validation(args.source_root, args.prior_fault_root, args.validation_root)}")
+
+
+def lock_panel(args: argparse.Namespace) -> None:
+    print(f"Locked all-endpoint-valid prospective panel: {lock_prospective_panel(args.validation_root, args.mage_repo)}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -178,6 +191,31 @@ def build_parser() -> argparse.ArgumentParser:
     compare.add_argument("--current", required=True)
     compare.add_argument("--output-dir", type=Path, required=True)
     compare.set_defaults(func=compare_operational)
+
+    replay = sub.add_parser(
+        "replay-operational-validation",
+        help="Benchmark the operational alarm rule on prior locked fault scores",
+    )
+    replay.add_argument("--audit-root", type=Path, required=True)
+    replay.add_argument("--output-dir", type=Path, required=True)
+    replay.set_defaults(func=replay_operational)
+
+    prospective = sub.add_parser(
+        "prepare-operational-validation",
+        help="Lock fresh group-disjoint candidates and opaque validation conditions",
+    )
+    prospective.add_argument("--source-root", type=Path, required=True)
+    prospective.add_argument("--prior-fault-root", type=Path, required=True)
+    prospective.add_argument("--validation-root", type=Path, required=True)
+    prospective.set_defaults(func=prepare_prospective)
+
+    panel = sub.add_parser(
+        "lock-operational-validation-panel",
+        help="Token-check candidates and lock the prospective scoring panel",
+    )
+    panel.add_argument("--validation-root", type=Path, required=True)
+    panel.add_argument("--mage-repo", type=Path, required=True)
+    panel.set_defaults(func=lock_panel)
     return parser
 
 

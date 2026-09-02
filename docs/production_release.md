@@ -33,16 +33,18 @@ collection time. Any reported failure or truncation rejects the complete run;
 variants are never silently compared on different visible text.
 
 The two reference runs estimate repeat noise. The comparison tests changes in
-unmodified scores, low/high probe shifts, and response slopes across punctuation
-normalization, sentence splitting, and paragraph resegmentation. It uses a
+unmodified scores plus within-run empirical-rank low/high shifts and response
+slopes across punctuation normalization, sentence splitting, and paragraph
+resegmentation. Rank geometry is invariant to monotone score recalibration. It uses a
 Bonferroni-adjusted paired sign rule plus frozen practical-effect requirements.
 A reference whose 95th-percentile repeat disagreement exceeds the frozen limit
 returns `inconclusive`.
 
-This operational rule is an **engineering beta**. The controlled-fault research
-supports the underlying feature design, but the rule has not yet been validated
-on real external vendor updates. Institutions must conduct that validation
-before treating its alarm as production assurance.
+This operational rule is an **engineering beta**. A retrospective replay on the
+locked controlled-fault scores reached 0.964 AUROC and 88.5% sensitivity with
+no unchanged false alarms, but failed the 70% per-endpoint floor on MAGE. A new
+prospective, group-disjoint panel is locked and awaiting scoring. Institutions
+must not treat the replay as independent production validation.
 
 ## Research release interface
 

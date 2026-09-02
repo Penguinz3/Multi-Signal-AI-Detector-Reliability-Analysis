@@ -49,6 +49,8 @@ class ProductContractTests(unittest.TestCase):
             "fault-audit-status", "package-fault-audit",
             "export-fault-audit-contracts", "render-fault-audit-report",
             "init-audit", "export-challenge", "import-run", "compare-runs",
+            "replay-operational-validation", "prepare-operational-validation",
+            "lock-operational-validation-panel",
         })
 
     def test_contract_bundle_has_stable_template(self):

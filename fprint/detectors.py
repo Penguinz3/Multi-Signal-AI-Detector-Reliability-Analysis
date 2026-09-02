@@ -347,11 +347,11 @@ def _mage_preprocessor(mage_repo: str) -> Callable[[str], str]:
         raise RuntimeError("--mage-repo must be the official MAGE repository checkout.")
     try:
         revision = subprocess.run(
-            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            ["git", "-c", f"safe.directory={repo}", "-C", str(repo), "rev-parse", "HEAD"],
             check=True, capture_output=True, text=True,
         ).stdout.strip()
         dirty = subprocess.run(
-            ["git", "-C", str(repo), "status", "--porcelain", "--", "deployment"],
+            ["git", "-c", f"safe.directory={repo}", "-C", str(repo), "status", "--porcelain", "--", "deployment"],
             check=True, capture_output=True, text=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as error:

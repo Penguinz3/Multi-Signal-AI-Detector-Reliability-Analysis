@@ -1,0 +1,56 @@
+# Operational Validation
+
+## Development replay
+
+The production alarm rule was replayed end to end on the previously locked
+controlled-fault scores. This is development evidence, not an independent
+prospective result, because the scores and fault outcomes already existed.
+
+At 50 passages per probe, the replay produced:
+
+- AUROC 0.964;
+- sensitivity 88.5%;
+- unchanged false-alarm rate 0%;
+- RADAR sensitivity 98.4%;
+- LogRank sensitivity 100%;
+- MAGE sensitivity 67.2%.
+
+The replay did not pass the stricter product gate because MAGE was below the
+predeclared 70% per-endpoint sensitivity floor. Most misses were upstream
+whitespace changes that affected too few MAGE passages to satisfy the frozen
+20% materiality rule. The gate is not lowered after seeing this result.
+
+The machine-readable local result is generated with
+`replay-operational-validation`. It explicitly labels itself
+`development_replication_not_prospective_validation`.
+
+## Prospective confirmation
+
+A new score-blind panel has been locked under
+`F:\Research\FPRINT-operational-validation`. It uses groups that were absent
+from the earlier probe and fault panels, preserves author/user/article/book/
+report grouping, and binds the globally RAID-deduplicated grouped source
+database by SHA-256.
+
+The locked panel contains 968 triplets. Four corpora support the complete
+50-per-probe primary budget: CNN/DailyMail, GovReport, Stack Exchange, and
+WikiText-103. Sparse cells are retained with their actual counts; eligibility
+is never manufactured by reusing groups or lowering the frozen two-site probe
+minimum. Gutenberg has no independent full panel remaining and is unavailable
+for the three-probe prospective analysis.
+
+Every selected original/low/high triplet passed the pinned RADAR, MAGE, and
+LogRank tokenizer limits as a unit. If any member had exceeded capacity, the
+whole triplet would have been excluded before fault scoring. The condition
+truth table is separately locked and must remain hidden from the analyzer
+until all blind reports are hash-locked.
+
+The prospective test keeps the 50-passage gate at:
+
+- at least 80% overall sensitivity;
+- at most 5% unchanged false alarms;
+- at least 70% sensitivity for every endpoint;
+- at least four full-budget corpora.
+
+Passing the retrospective replay alone cannot remove the engineering-beta
+label. Only the prospective panel can supply that evidence.
