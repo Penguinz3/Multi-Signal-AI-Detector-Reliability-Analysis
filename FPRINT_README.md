@@ -225,6 +225,23 @@ with `--judgments` to lock the completed audit. Canonical score tables let the
 same analyzer consume local, hosted, or later commercial detector outputs; all
 rows are checked against locked text hashes and immutable detector revisions.
 
+### Selective-deferral pilot result
+
+The locked complete-case pilot did not pass. At 90% AI true-positive retention,
+the fingerprint model removed 33.82% of human false accusations, versus 91.74%
+for the preregistered delta-free comparator (incremental effect: -57.91
+percentage points). The 10,000-replicate paired bootstrap remained entirely
+negative at the 80% interval (-61.00 to -48.05 points). Only two of four
+corpora supplied the required 30 human false-accusation events. The final stage
+is therefore stopped by design; do not tune or replace probes using this
+outcome.
+
+The three 300-row audit tables were validated by score-blind Codex subagents
+and must be described as model-assisted validation rather than human manual
+review. Each table passed 300/300 under the locked operational transform. The
+`sentence_blocks_2` audit labels retain 27 abbreviation/list-label artifacts
+and 22 additional deterministic-splitter edge cases for transparent reporting.
+
 ---
 
 # Legacy Multi-Signal AI-Detector Reliability Analysis

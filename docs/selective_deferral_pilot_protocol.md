@@ -225,3 +225,33 @@ Failure stops the study without probe substitution, threshold relaxation,
 post-hoc model expansion, or additional sampling. A passed pilot permits only
 a RADAR-specific final-protocol lock. This implementation intentionally has no
 final scoring command.
+
+## Locked pilot outcome
+
+The complete-case pilot was evaluated on 4,999 human/AI pairs after one
+score-blind generation-infeasible pair was excluded. The fixed 5% RADAR
+threshold produced 227 human false accusations and 580 correctly accused AI
+passages among the 807 conditionally scored originals. Only two of the four
+corpora met the preregistered minimum of 30 human false accusations.
+
+At the oracle point retaining 90% of correctly accused AI passages, the
+fingerprint model removed 33.82% of human false accusations, compared with
+91.74% for the fixed delta-free comparator. The incremental removal was
+-57.91 percentage points. Across 10,000 paired bootstrap replicates, the mean
+incremental effect was -54.37 points and the 80% interval was entirely negative
+(-61.00 to -48.05 points). The fingerprint did not improve on the comparator in
+any corpus (one tie and three losses).
+
+Accordingly, the pilot failed the corpus-event, incremental-effect,
+bootstrap-lower-bound, and positive-corpora gates. The negative result is
+locked in `pilot_gate.json`; the protocol forbids rescue analyses, probe
+substitution, or a final stage.
+
+The three 300-row probe audits were completed as Codex model-assisted
+validation, not as human manual review. Reviewers had no detector-score access
+and checked locked-transform fidelity, exact text/hash preservation, change,
+and readability. All 900 rows passed the operational definition. For
+`sentence_blocks_2`, 27 abbreviation/list-label artifacts and 22 additional
+splitter edge cases remain explicitly labeled in the audit table. These cases
+reflect the preregistered deterministic punctuation splitter and are disclosed
+rather than silently reclassified after outcomes were known.
