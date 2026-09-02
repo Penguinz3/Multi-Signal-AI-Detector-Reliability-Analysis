@@ -1,4 +1,4 @@
-"""FPRINT: fixed-threshold detector false-positive forecasting."""
+"""FPRINT: AI-text detector reliability and behavioral conformance tooling."""
 
 from .core import STUDY_VERSION
 

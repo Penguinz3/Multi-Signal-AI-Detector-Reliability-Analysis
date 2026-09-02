@@ -15,8 +15,10 @@ from .core import (
 )
 from .detectors import SPECS, build_adapter, validate_labeled_pilot, validate_specs
 from .conformance import (
-    evaluate_fault_audit, import_score_table, prepare_fault_audit, score_fault_audit,
+    evaluate_fault_audit, fault_audit_readiness, import_score_table, prepare_fault_audit,
+    score_fault_audit,
 )
+from .product import build_release_bundle, export_contracts, write_evaluation_html
 from .final_evaluation import run_final_evaluation
 from .fingerprint_geometry import write_fingerprint_geometry
 from .forecasting import build_zero_forecasts
@@ -442,6 +444,26 @@ def evaluate_conformance(args: argparse.Namespace) -> None:
     )
 
 
+def export_conformance_contracts(args: argparse.Namespace) -> None:
+    print(f"Exported FPRINT production contracts: {export_contracts(args.output_dir)}")
+
+
+def render_conformance_report(args: argparse.Namespace) -> None:
+    print(f"Wrote privacy-preserving FPRINT report: {write_evaluation_html(args.evaluation, args.output)}")
+
+
+def conformance_status(args: argparse.Namespace) -> None:
+    print(json.dumps(fault_audit_readiness(args.audit_root), indent=2, sort_keys=True))
+
+
+def package_conformance(args: argparse.Namespace) -> None:
+    readiness = fault_audit_readiness(args.audit_root)
+    if not readiness["ready"]:
+        raise ValueError(f"Fault audit is incomplete: {readiness['missing']}")
+    evaluation = args.audit_root / "results" / "fault_audit_evaluation.json"
+    print(f"Published FPRINT release bundle: {build_release_bundle(evaluation, args.output_dir)}")
+
+
 def _json_payload(path: Path) -> object:
     with path.open(encoding="utf-8-sig") as handle:
         return json.load(handle)
@@ -688,7 +710,7 @@ def lock_deferral_final(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="fprint", description="Fixed-threshold detector FPR forecasting")
+    parser = argparse.ArgumentParser(prog="fprint", description="AI-text detector reliability and conformance toolkit")
     sub = parser.add_subparsers(dest="command", required=True)
     prepare_parser = sub.add_parser("prepare")
     prepare_parser.add_argument("--corpus", type=_parse_corpus, action="append", required=True)
@@ -776,6 +798,32 @@ def build_parser() -> argparse.ArgumentParser:
     fault_evaluate.add_argument("--audit-root", type=Path, required=True)
     fault_evaluate.add_argument("--output-dir", type=Path)
     fault_evaluate.set_defaults(func=evaluate_conformance)
+    contract_export = sub.add_parser(
+        "export-fault-audit-contracts",
+        help="Export the versioned external-score and evaluation interchange contracts",
+    )
+    contract_export.add_argument("--output-dir", type=Path, required=True)
+    contract_export.set_defaults(func=export_conformance_contracts)
+    report_render = sub.add_parser(
+        "render-fault-audit-report",
+        help="Render a validated fault-audit evaluation as a standalone HTML report",
+    )
+    report_render.add_argument("--evaluation", type=Path, required=True)
+    report_render.add_argument("--output", type=Path, required=True)
+    report_render.set_defaults(func=render_conformance_report)
+    fault_status = sub.add_parser(
+        "fault-audit-status",
+        help="Verify the locked audit and show whether required scoring is complete",
+    )
+    fault_status.add_argument("--audit-root", type=Path, required=True)
+    fault_status.set_defaults(func=conformance_status)
+    fault_package = sub.add_parser(
+        "package-fault-audit",
+        help="Verify a completed audit and atomically publish a privacy-safe release bundle",
+    )
+    fault_package.add_argument("--audit-root", type=Path, required=True)
+    fault_package.add_argument("--output-dir", type=Path, required=True)
+    fault_package.set_defaults(func=package_conformance)
     deferral_prepare = sub.add_parser(
         "prepare-deferral-pilot",
         help="Select, validate, and lock the isolated human/AI deferral pilot",

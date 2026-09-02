@@ -1,0 +1,1 @@
+triplet_id,intensity,audited_endpoint,fault_id,effective_endpoint,native_score,canonical_ai_score,input_token_count,effective_token_count,max_tokens,truncated,runtime_ms,failure

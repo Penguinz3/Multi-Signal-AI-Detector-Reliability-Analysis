@@ -1,0 +1,34 @@
+{
+  "constraints": [
+    "IDs, endpoints, and fault IDs must belong to the locked audit manifest.",
+    "canonical_ai_score must increase with evidence for AI-generated text.",
+    "Failed or truncated rows must retain their failure and truncation provenance."
+  ],
+  "contract": "fprint.external_fault_score_table",
+  "enums": {
+    "intensity": [
+      "original",
+      "low",
+      "high"
+    ]
+  },
+  "format": "CSV with a header row",
+  "optional_fields": [
+    "input_token_count",
+    "effective_token_count",
+    "max_tokens",
+    "truncated",
+    "runtime_ms",
+    "failure"
+  ],
+  "required_fields": [
+    "triplet_id",
+    "intensity",
+    "audited_endpoint",
+    "fault_id",
+    "effective_endpoint",
+    "native_score",
+    "canonical_ai_score"
+  ],
+  "schema_version": 1
+}

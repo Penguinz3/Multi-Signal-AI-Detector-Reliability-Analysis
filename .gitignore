@@ -24,6 +24,10 @@ outputs/positive_detections.csv
 .DS_Store
 .ipynb_checkpoints/
 .pytest_cache/
+.pytest-*/
+.uv-cache*/
+.codex/
+*.log
 
 # FPRINT runtime data, model caches, and local source archives.
 FPRINT-storage/
@@ -31,4 +35,8 @@ data/normalized/
 data/raid_human.csv
 data/bawe.csv
 *.provenance.json
+
+# Local product builds and unpublished manuscript drafts.
+outputs/product/
+/*DRAFT.pdf
 

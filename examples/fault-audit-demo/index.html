@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPRINT behavioral conformance report</title>
+<style>
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; line-height: 1.5; }
+body { margin: 0 auto; max-width: 72rem; padding: 2rem; }
+header, section { border: 1px solid #8886; border-radius: .75rem; margin: 0 0 1rem; padding: 1.25rem; }
+h1, h2 { line-height: 1.15; }
+.status { border-left: .45rem solid; font-size: 1.1rem; font-weight: 700; padding: .8rem 1rem; }
+.pass { border-color: #16803c; } .fail { border-color: #b42318; }
+.warning { background: #b86e0018; border-left: .35rem solid #b86e00; padding: .8rem 1rem; }
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+table { border-collapse: collapse; width: 100%; } caption { font-weight: 700; text-align: left; margin-bottom: .5rem; }
+th, td { border-bottom: 1px solid #8885; padding: .5rem; text-align: left; }
+code { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<header>
+<p>FPRINT · system-level behavioral assurance</p>
+<h1>Black-box AI-text detector conformance report</h1>
+<p class="status pass">Validated for behavioral change detection</p>
+<p>Permitted claim: <strong>behavioral change detection and localization</strong></p>
+</header>
+<main>
+<section>
+<h2>Validation evidence</h2>
+<div class="grid">
+<table><caption>Held-out-corpus evaluation</caption><tbody><tr><th scope="row">Macro AUROC</th><td>0.920</td></tr><tr><th scope="row">Sensitivity</th><td>86.0%</td></tr><tr><th scope="row">Unchanged false-alarm rate</th><td>3.0%</td></tr></tbody></table>
+<table><caption>Prospective confirmation</caption><tbody><tr><th scope="row">Macro AUROC</th><td>0.880</td></tr><tr><th scope="row">Sensitivity</th><td>82.0%</td></tr><tr><th scope="row">Unchanged false-alarm rate</th><td>4.0%</td></tr></tbody></table>
+</div>
+</section>
+<section>
+<h2>Behavior by declared change family</h2>
+<table><caption>Primary AUROC</caption><tbody><tr><th scope="row">Core Computation</th><td>0.950</td></tr><tr><th scope="row">Input Handling</th><td>0.890</td></tr><tr><th scope="row">Output Policy</th><td>0.910</td></tr></tbody></table>
+</section>
+<section>
+<h2>Operational boundary</h2>
+<p class="warning">Coarse fault-family diagnosis did not pass validation and must not be used operationally.</p>
+<p>Demonstration data only. The report detects observable behavioral departure; it does not estimate deployment false-positive rates, determine authorship, or identify an exact internal cause.</p>
+<p>FPRINT is not an authorship detector and must not be used to adjudicate whether an individual person used AI.</p>
+</section>
+<section>
+<h2>Integrity</h2>
+<p>Evaluation schema: v1</p>
+<p>Locked manifest: <code>1111111111111111111111111111111111111111111111111111111111111111</code></p>
+</section>
+</main>
+</body>
+</html>

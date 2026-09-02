@@ -1,0 +1,23 @@
+{
+  "allowed_primary_claims": [
+    "coarse_fault_detection_and_diagnosis",
+    "behavioral_change_detection_and_localization",
+    "negative_result"
+  ],
+  "contract": "fprint.fault_audit_evaluation",
+  "format": "JSON",
+  "required_top_level_fields": [
+    "schema_version",
+    "construct",
+    "manifest_lock_sha256",
+    "success_gates",
+    "discovery_metrics",
+    "confirmation_metrics",
+    "claim_boundary"
+  ],
+  "schema_version": 1,
+  "supported_constructs": [
+    "black_box_behavioral_conformance_and_coarse_fault_localization",
+    "behavioral_conformance"
+  ]
+}

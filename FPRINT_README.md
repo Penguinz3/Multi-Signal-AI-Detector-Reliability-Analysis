@@ -1,13 +1,14 @@
-# FPRINT: Fixed-Threshold Detector False-Positive Forecasting
+# FPRINT: Multi-Probe Behavioral Conformance Testing for Black-Box AI-Text Detectors
 
-This repository now contains the implementation of the FPRINT study. The legacy
-multi-signal analysis remains under `src/` and `archive/`; it is not used by the
-new pipeline.
+FPRINT detects whether a black-box AI-text detector still behaves like a
+previously audited reference and localizes which controlled probe responses
+changed. It is a system-level assurance tool, not an authorship detector, and
+must not be used to adjudicate whether an individual person used AI.
 
-FPRINT forecasts a detector configuration's human false-positive rate on an
-unscored target corpus from fixed-threshold source behavior, operational probe
-responses, and an unscored target text signature. The design is leave-one-corpus
-out; it does not automatically claim leave-one-domain-out transfer.
+The earlier fixed-threshold false-positive forecasting experiment is preserved
+as a negative result and scope boundary: behavioral fingerprints did not
+reliably replace direct deployment audits. The legacy multi-signal analysis
+remains under `src/` and `archive/`; it is not used by the conformance pipeline.
 
 ## Storage and environment
 
@@ -122,11 +123,59 @@ repeatability pilot passes.
 Run dependency-free checks with:
 
 ```powershell
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests\fprint -p "test_*.py" -v
 ```
 
 The frozen numerical design is in `fprint_config.json`. Core safeguards and
 their runnable checks are in `fprint/` and `tests/test_fprint.py`.
+
+## Production conformance interface
+
+The completed fault-audit pipeline remains hash-locked. Production commands
+wrap its outputs without changing the scientific implementation or frozen
+artifacts.
+
+Export the versioned external-score contract, evaluation contract, and blank
+CSV template:
+
+```powershell
+python -m fprint export-fault-audit-contracts `
+  --output-dir .\outputs\product\contracts
+```
+
+Check whether a locked audit is complete and internally consistent:
+
+```powershell
+python -m fprint fault-audit-status `
+  --audit-root F:\Research\FPRINT-fault-audit
+```
+
+Verify and atomically package a completed audit for an operator:
+
+```powershell
+python -m fprint package-fault-audit `
+  --audit-root F:\Research\FPRINT-fault-audit `
+  --output-dir .\fprint-release
+```
+
+The output directory must not already exist. The command publishes only a
+standalone report, aggregate public summary, versioned contracts, and hashed
+release manifest; local artifact paths and passage-level data remain private.
+
+Render a validated, standalone HTML report that contains aggregate evidence and
+lock provenance but no source passages:
+
+```powershell
+python -m fprint render-fault-audit-report `
+  --evaluation F:\Research\FPRINT-fault-audit\results\fault_audit_evaluation.json `
+  --output .\outputs\product\fault_audit_report.html
+```
+
+The canonical score importer remains fail-closed: IDs, endpoints, fault IDs,
+and intensities must match the locked manifest. Failed and truncated rows retain
+their provenance. Commercial integrations are intentionally outside the core;
+an authorized operator can export scores into the canonical table without
+giving FPRINT API credentials or storing raw passages in the report.
 
 ## Selective-deferral pilot
 

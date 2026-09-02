@@ -1,0 +1,47 @@
+{
+  "claim_boundary": "Demonstration data only. The report detects observable behavioral departure; it does not estimate deployment false-positive rates, determine authorship, or identify an exact internal cause.",
+  "confirmation_metrics": {
+    "combined": {
+      "auroc_by_family": {
+        "core_computation": 0.92,
+        "input_handling": 0.84,
+        "output_policy": 0.88
+      },
+      "macro_auroc": 0.88,
+      "macro_sensitivity": 0.82,
+      "unchanged_false_alarm_rate": 0.04
+    }
+  },
+  "construct": "black_box_behavioral_conformance_and_coarse_fault_localization",
+  "discovery_metrics": {
+    "combined:50": {
+      "auroc_by_family": {
+        "core_computation": 0.95,
+        "input_handling": 0.89,
+        "output_policy": 0.91
+      },
+      "macro_auroc": 0.92,
+      "macro_sensitivity": 0.86,
+      "unchanged_false_alarm_rate": 0.03
+    }
+  },
+  "manifest_lock_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "schema_version": 1,
+  "success_gates": {
+    "channels": {
+      "combined": {
+        "auroc_by_family": {
+          "core_computation": 0.95,
+          "input_handling": 0.89,
+          "output_policy": 0.91
+        },
+        "macro_auroc": 0.92,
+        "macro_sensitivity": 0.86,
+        "unchanged_false_alarm_rate": 0.03
+      }
+    },
+    "detection_gate_passed": true,
+    "diagnosis_gate_passed": false,
+    "permitted_primary_claim": "behavioral_change_detection_and_localization"
+  }
+}
