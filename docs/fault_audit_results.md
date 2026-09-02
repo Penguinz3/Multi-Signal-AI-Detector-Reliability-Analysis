@@ -32,7 +32,7 @@ The permitted report is: the audited endpoint measurably departed from its refer
 - Final score table: **76,215** rows, **0** failures, **0** truncated rows.
 - Compact observer cache: **6,314** token-sequence records.
 - Required endpoint/fault pairs: **15 of 15** complete.
-- Existing forecast-study artifacts remained unmodified.
+- The source study artifacts used to construct the challenge remained unmodified.
 - Three numbered, hash-chained amendments preserve and explain an inference dispatch correction, a paired-feature evaluation correction, and the retry of 2,286 failed accelerator rows. Invalid preliminary evaluations remain archived under the audit root.
 
-Canonical machine-readable results are written to `F:\Research\FPRINT-fault-audit\results\fault_audit_evaluation.json`; observation-level predictions are written to `F:\Research\FPRINT-fault-audit\results\fault_audit_predictions.csv`.
+Canonical machine-readable results are written to `<audit-root>/results/fault_audit_evaluation.json`; observation-level predictions are written to `<audit-root>/results/fault_audit_predictions.csv`.

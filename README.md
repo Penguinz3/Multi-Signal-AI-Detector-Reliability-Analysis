@@ -35,14 +35,15 @@ versioned import contracts, and a manifest containing every artifact hash. Raw
 passages, credentials, caches, model weights, and local paths are excluded.
 
 See the [demonstration bundle](examples/fault-audit-demo/README.md), the
-[complete FPRINT guide](FPRINT_README.md), and the
+[study protocol](docs/fault_audit_protocol.md), and the
 [production boundary](docs/production_release.md).
 
 ## Reproduce the checks
 
-Install the requirements appropriate to the task, then run:
+From the repository root:
 
 ```powershell
+python -m pip install -r requirements.txt
 python -m unittest discover -s tests\fprint -p "test_*.py" -v
 ```
 

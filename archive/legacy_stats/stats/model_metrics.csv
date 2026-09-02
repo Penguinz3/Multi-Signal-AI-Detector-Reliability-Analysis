@@ -1,4 +1,0 @@
-model,n_rows,r_squared,aic
-OLS(ai_prob),32578,0.01895040134457482,11493.196543880513
-GLM_Binomial(is_ai),32578,,24316.94101086757
-BayesianLinear(ai_prob),6000,,

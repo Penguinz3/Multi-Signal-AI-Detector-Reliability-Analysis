@@ -1,10 +1,6 @@
-pandas
-numpy
-scikit-learn
-matplotlib
-scipy
-transformers
-torch
-tqdm
-nltk
+numpy==2.5.1
+transformers==4.57.6
+torch==2.13.0
+accelerate==1.14.0
+clean-text==0.6.0
 

@@ -28,11 +28,11 @@ If a fail-closed implementation defect is found after locking, the original mani
 Example:
 
 ```powershell
-python -m fprint.cli prepare-fault-audit `
-  --source-root F:\Research\FPRINT-storage-grouped-final `
-  --audit-root F:\Research\FPRINT-fault-audit `
+python -m fprint prepare-fault-audit `
+  --source-root <read-only-source-study-root> `
+  --audit-root <new-fault-audit-root> `
   --config .\fault_audit_config.json `
-  --evaluation F:\Research\FPRINT-storage-grouped-final\results\final\final_evaluation.json
+  --evaluation <source-study-evaluation.json>
 ```
 
 ## Scoring
@@ -40,19 +40,19 @@ python -m fprint.cli prepare-fault-audit `
 `score-fault-audit` is resumable. Input and mean-log-probability faults require inference. Monotone output and threshold faults are derived from frozen scores. Endpoint replacements reuse exact frozen scores when available. The earlier archive retained Qwen score hashes but not the underlying arrays, so new Qwen passes are stored once in an audit-local compressed rank/log-probability cache and reused across LogRank, Lastde, and mean-log-probability. Every original/low/high triplet is rejected for an endpoint-fault pair if any member exceeds its scoring capacity; members are never independently truncated.
 
 ```powershell
-python -m fprint.cli score-fault-audit `
-  --audit-root F:\Research\FPRINT-fault-audit `
+python -m fprint score-fault-audit `
+  --audit-root <fault-audit-root> `
   --endpoint radar_roberta_large__vicuna7b_training `
   --fault input_newline_flatten
 ```
 
-External black-box results can use the same analyzer through `--import-score-table`. The canonical CSV requires `triplet_id`, `intensity`, `audited_endpoint`, `fault_id`, `effective_endpoint`, `native_score`, and `canonical_ai_score`; optional runtime, token-count, truncation, and failure columns retain provenance. This is the future GPTZero/Turnitin interface. No commercial API integration is part of this phase.
+External black-box results can use the same analyzer through `--import-score-table`. The canonical CSV requires `triplet_id`, `intensity`, `audited_endpoint`, `fault_id`, `effective_endpoint`, `native_score`, and `canonical_ai_score`; optional runtime, token-count, truncation, and failure columns retain provenance. This is the vendor-neutral interface; no commercial API integration is part of this release.
 
 ## Evaluation
 
 ```powershell
-python -m fprint.cli evaluate-fault-audit `
-  --audit-root F:\Research\FPRINT-fault-audit
+python -m fprint evaluate-fault-audit `
+  --audit-root <fault-audit-root>
 ```
 
 The evaluator produces raw unperturbed-score summaries, monotone-resistant within-run rank geometry, and their combination. Every current-run vector is first differenced from the unchanged score vector for the exact same locked texts; otherwise corpus identity is confounded with behavioral change. For every held-out corpus it recomputes scaling, unchanged-change centroids, the 5% alarm threshold, family centroids, and distance/margin abstention rules using training corpora only. Family centroids also exclude the tested fault variant. Draws are group-aware at budgets 10, 25, and 50.

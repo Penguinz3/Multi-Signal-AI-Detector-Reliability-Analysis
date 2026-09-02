@@ -1,4 +1,0 @@
-chunk_id,doc_id,source,year,journal,section,chunk_index,start_sentence,n_sentences,word_count,text,raw_doc_path
-sample-001,SAMPLE-001,sample,2018,Sample Journal,introduction,0,0,1,18,The study examined clinical records from adults enrolled before 2019 and reported descriptive outcomes across several hospital departments,
-sample-002,SAMPLE-001,sample,2018,Sample Journal,results,1,1,1,18,Participants described fatigue and sleep disruption after treatment but most responses emphasized gradual recovery and routine follow up,
-sample-003,SAMPLE-002,sample,2017,Sample Journal,methods,0,0,1,17,Methods sections used repeated technical terms because protocol details were copied across measurement descriptions and eligibility criteria,

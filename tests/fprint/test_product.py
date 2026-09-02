@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from fprint.cli import build_parser
 from fprint.product import (
     SCORE_TABLE_OPTIONAL_FIELDS,
     SCORE_TABLE_REQUIRED_FIELDS,
@@ -40,6 +41,15 @@ def _report():
 
 
 class ProductContractTests(unittest.TestCase):
+    def test_public_cli_contains_only_conformance_commands(self):
+        parser = build_parser()
+        subcommands = next(action.choices for action in parser._actions if hasattr(action, "choices") and action.choices)
+        self.assertEqual(set(subcommands), {
+            "prepare-fault-audit", "score-fault-audit", "evaluate-fault-audit",
+            "fault-audit-status", "package-fault-audit",
+            "export-fault-audit-contracts", "render-fault-audit-report",
+        })
+
     def test_contract_bundle_has_stable_template(self):
         with tempfile.TemporaryDirectory() as temporary:
             paths = export_contracts(Path(temporary))
