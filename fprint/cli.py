@@ -12,6 +12,7 @@ from .conformance import (
     score_fault_audit,
 )
 from .detectors import SPECS
+from .operational import compare_runs, export_challenge, import_run, initialize_audit
 from .product import build_release_bundle, export_contracts, write_evaluation_html
 
 
@@ -66,6 +67,34 @@ def render_conformance_report(args: argparse.Namespace) -> None:
     print(f"Wrote privacy-preserving FPRINT report: {write_evaluation_html(args.evaluation, args.output)}")
 
 
+def initialize_operational(args: argparse.Namespace) -> None:
+    result = initialize_audit(
+        args.records,
+        args.audit_root,
+        args.endpoint,
+        minimum_triplets_per_probe=args.minimum_triplets,
+        minimum_sites=args.minimum_sites,
+        alpha=args.alpha,
+        absolute_tolerance=args.absolute_tolerance,
+        noise_multiplier=args.noise_multiplier,
+        minimum_affected_fraction=args.minimum_affected_fraction,
+        maximum_reference_noise=args.maximum_reference_noise,
+    )
+    print(json.dumps(result, indent=2, sort_keys=True))
+
+
+def export_operational(args: argparse.Namespace) -> None:
+    print(f"Exported locked challenge: {export_challenge(args.audit_root, args.output_dir)}")
+
+
+def import_operational_run(args: argparse.Namespace) -> None:
+    print(f"Locked detector run: {import_run(args.audit_root, args.run_id, args.role, args.scores, args.metadata)}")
+
+
+def compare_operational(args: argparse.Namespace) -> None:
+    print(f"Published operational report: {compare_runs(args.audit_root, args.reference, args.current, args.output_dir)}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fprint",
@@ -116,6 +145,39 @@ def build_parser() -> argparse.ArgumentParser:
     render.add_argument("--evaluation", type=Path, required=True)
     render.add_argument("--output", type=Path, required=True)
     render.set_defaults(func=render_conformance_report)
+
+    initialize = sub.add_parser("init-audit", help="Lock an operational challenge from approved records")
+    initialize.add_argument("--records", type=Path, required=True)
+    initialize.add_argument("--audit-root", type=Path, required=True)
+    initialize.add_argument("--endpoint", required=True)
+    initialize.add_argument("--minimum-triplets", type=int, default=10)
+    initialize.add_argument("--minimum-sites", type=int, default=4)
+    initialize.add_argument("--alpha", type=float, default=.05)
+    initialize.add_argument("--absolute-tolerance", type=float, default=.01)
+    initialize.add_argument("--noise-multiplier", type=float, default=3.0)
+    initialize.add_argument("--minimum-affected-fraction", type=float, default=.20)
+    initialize.add_argument("--maximum-reference-noise", type=float, default=.02)
+    initialize.set_defaults(func=initialize_operational)
+
+    challenge = sub.add_parser("export-challenge", help="Export the locked query table and score template")
+    challenge.add_argument("--audit-root", type=Path, required=True)
+    challenge.add_argument("--output-dir", type=Path, required=True)
+    challenge.set_defaults(func=export_operational)
+
+    run = sub.add_parser("import-run", help="Validate and lock one complete detector score run")
+    run.add_argument("--audit-root", type=Path, required=True)
+    run.add_argument("--run-id", required=True)
+    run.add_argument("--role", choices=("reference", "current"), required=True)
+    run.add_argument("--scores", type=Path, required=True)
+    run.add_argument("--metadata", type=Path, required=True)
+    run.set_defaults(func=import_operational_run)
+
+    compare = sub.add_parser("compare-runs", help="Compare a current run with two locked reference repeats")
+    compare.add_argument("--audit-root", type=Path, required=True)
+    compare.add_argument("--reference", nargs=2, required=True, metavar=("REFERENCE_A", "REFERENCE_B"))
+    compare.add_argument("--current", required=True)
+    compare.add_argument("--output-dir", type=Path, required=True)
+    compare.set_defaults(func=compare_operational)
     return parser
 
 

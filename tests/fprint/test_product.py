@@ -48,6 +48,7 @@ class ProductContractTests(unittest.TestCase):
             "prepare-fault-audit", "score-fault-audit", "evaluate-fault-audit",
             "fault-audit-status", "package-fault-audit",
             "export-fault-audit-contracts", "render-fault-audit-report",
+            "init-audit", "export-challenge", "import-run", "compare-runs",
         })
 
     def test_contract_bundle_has_stable_template(self):

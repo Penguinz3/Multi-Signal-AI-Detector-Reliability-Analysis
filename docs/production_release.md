@@ -11,10 +11,43 @@ It does not determine whether a passage was written by AI, estimate a deployed
 false-positive rate, identify an internal software defect, or adjudicate an
 individual accusation.
 
-## Release interface
+## Operational interface
 
-The research pipeline remains the source of truth for preparation, scoring, and
-evaluation. The production layer adds only:
+An operator creates a new audit from approved records, exports its locked
+challenge, records two reference repeats, records a current run, and compares
+them:
+
+1. `init-audit`
+2. `export-challenge`
+3. `import-run --role reference` twice
+4. `import-run --role current`
+5. `compare-runs`
+
+Challenge IDs, text hashes, detector identity, decision settings, score-table
+hashes, and run roles are locked. Imports must contain every challenge ID
+exactly once and canonical scores must be finite values in `[0,1]`. Existing
+audit, run, export, and report destinations are never overwritten.
+
+Each run must record its version, configuration, threshold policy, and UTC
+collection time. Any reported failure or truncation rejects the complete run;
+variants are never silently compared on different visible text.
+
+The two reference runs estimate repeat noise. The comparison tests changes in
+unmodified scores, low/high probe shifts, and response slopes across punctuation
+normalization, sentence splitting, and paragraph resegmentation. It uses a
+Bonferroni-adjusted paired sign rule plus frozen practical-effect requirements.
+A reference whose 95th-percentile repeat disagreement exceeds the frozen limit
+returns `inconclusive`.
+
+This operational rule is an **engineering beta**. The controlled-fault research
+supports the underlying feature design, but the rule has not yet been validated
+on real external vendor updates. Institutions must conduct that validation
+before treating its alarm as production assurance.
+
+## Research release interface
+
+The frozen research pipeline remains the source of truth for its controlled-fault
+preparation, scoring, and evaluation. Its packaging layer adds:
 
 - versioned external-score and evaluation contracts;
 - a blank canonical score-table template;
@@ -38,7 +71,7 @@ This keeps vendor credentials and endpoint-specific clients outside the core.
 An institution or auditor may collect scores through an authorized mechanism
 and import them through the frozen table contract.
 
-## Intended operational use
+## Intended use
 
 1. Approve a detector configuration and create a reference audit.
 2. Record its endpoint identity, settings, threshold policy, and lock digest.

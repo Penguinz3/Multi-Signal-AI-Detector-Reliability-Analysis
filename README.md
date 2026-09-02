@@ -1,51 +1,97 @@
 # FPRINT
 
-**Multi-Probe Behavioral Conformance Testing for Black-Box AI-Text Detectors**
+**Behavioral conformance testing for black-box AI-text detectors**
 
-FPRINT checks whether an AI-text detector still behaves like a previously
-audited reference. It replays controlled text probes, detects behavioral
-departures, and shows which probe responses contributed to the alarm without
-requiring access to the detector's internals.
+FPRINT records how an approved detector responds to a locked set of controlled
+text probes, then checks a later run for meaningful behavioral changes. It needs
+only detector scores—not model weights, source code, or vendor integration.
 
-FPRINT is a system-assurance tool. It is **not** an authorship detector and must
-not be used to decide whether an individual person used AI.
+FPRINT answers:
 
-## Validated result
+- does the current endpoint still match its approved reference behavior?
+- which punctuation, sentence-splitting, paragraph, or raw-score responses changed?
+- should the endpoint be revalidated before continued high-stakes use?
 
-The completed forecast-locked study reached 0.974 macro AUROC and 0.948
-sensitivity with no unchanged false alarms in held-out-corpus evaluation. A
-prospective new-group confirmation reached 0.933 macro AUROC and 0.866
-sensitivity, again with no unchanged false alarms. Coarse fault-family diagnosis
-did not pass its gate, so the supported claim is behavioral change detection and
-probe-level localization—not identification of a detector's exact internal cause.
+It does **not** determine authorship, adjudicate an individual accusation,
+estimate deployment accuracy, or identify the detector's exact internal change.
 
-## Local release workflow
+## Product status
+
+The repository contains two deliberately separate layers:
+
+- **Operational beta:** a vendor-neutral, local reference/current workflow. Its
+  repeat-noise decision rule is transparent and fail-closed, but has not yet
+  been validated on real external vendor updates.
+- **Frozen research artifact:** controlled-fault experiments achieved 0.974
+  macro AUROC and 94.8% sensitivity with no unchanged false alarms. Prospective
+  confirmation achieved 0.933 AUROC and 86.6% sensitivity. Fault-family
+  diagnosis failed, so only change detection and probe-level localization are
+  supported.
+
+## Operational workflow
+
+Start with a diverse, approved CSV containing `record_id,text`. FPRINT creates
+three variants per eligible record and locks every challenge ID and text hash.
 
 ```powershell
-python -m fprint fault-audit-status --audit-root <locked-audit-root>
+python -m fprint init-audit `
+  --records <approved-records.csv> `
+  --audit-root <new-audit-directory> `
+  --endpoint <detector-and-configuration-id>
 
-python -m fprint package-fault-audit `
-  --audit-root <locked-audit-root> `
-  --output-dir <new-release-directory>
+python -m fprint export-challenge `
+  --audit-root <audit-directory> `
+  --output-dir <new-export-directory>
 ```
 
-The packaging command refuses incomplete audits and existing output directories.
-It publishes a standalone HTML report, aggregate public evaluation summary,
-versioned import contracts, and a manifest containing every artifact hash. Raw
-passages, credentials, caches, model weights, and local paths are excluded.
+Query the detector twice while it is in its approved reference state and once
+for the current state. Enter scores in the exported template. Canonical scores
+must be finite values from 0 to 1, with larger values meaning more AI-like.
 
-See the [demonstration bundle](examples/fault-audit-demo/README.md), the
-[study protocol](docs/fault_audit_protocol.md), and the
-[production boundary](docs/production_release.md).
+```powershell
+python -m fprint import-run --audit-root <audit-directory> `
+  --run-id reference-a --role reference --scores <reference-a.csv> `
+  --metadata <reference-a-metadata.json>
 
-## Reproduce the checks
+python -m fprint import-run --audit-root <audit-directory> `
+  --run-id reference-b --role reference --scores <reference-b.csv> `
+  --metadata <reference-b-metadata.json>
 
-From the repository root:
+python -m fprint import-run --audit-root <audit-directory> `
+  --run-id current --role current --scores <current.csv> `
+  --metadata <current-metadata.json>
+
+python -m fprint compare-runs --audit-root <audit-directory> `
+  --reference reference-a reference-b --current current `
+  --output-dir <new-report-directory>
+```
+
+Metadata must record `version`, `configuration`, `threshold_policy`, and
+`collected_at_utc`. Failed or truncated queries reject the complete run. The
+report contains aggregate deltas and hashes but no source passages. A noisy
+reference produces `inconclusive`; a detected departure produces `changed` and
+`revalidation_required: true`.
+
+Run the complete [synthetic operational demo](examples/operational-demo/README.md)
+or view the [research-result report demo](examples/fault-audit-demo/README.md).
+
+## Research artifact
+
+The original controlled-fault workflow remains available through the
+`prepare-fault-audit`, `score-fault-audit`, `evaluate-fault-audit`, and
+`package-fault-audit` commands. Its protocol and limitations are documented in
+[the frozen protocol](docs/fault_audit_protocol.md) and
+[results](docs/fault_audit_results.md). The immutable Git tag is
+`fprint-research-v1`.
+
+## Install and test
+
+The operational black-box workflow uses the Python standard library. Local
+open-model scoring additionally uses the pinned packages in `requirements.txt`.
 
 ```powershell
 python -m pip install -r requirements.txt
 python -m unittest discover -s tests\fprint -p "test_*.py" -v
 ```
 
-The earlier fixed-threshold FPR-forecasting experiment is retained as a negative
-result and scope boundary. Historical multi-signal work remains in `archive/`.
+See [production boundaries and release gates](docs/production_release.md).
