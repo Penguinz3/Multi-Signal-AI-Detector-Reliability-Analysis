@@ -80,4 +80,7 @@ The first scoring preflight exposed that the original panel lock froze row IDs
 and counts but omitted the `panel.csv` byte hash. No detector was loaded. A
 separate `lock-operational-validation-integrity-amendment` stage preserves the
 original locks and binds their exact panel bytes plus the corrected code before
-scoring; it refuses to run after any score row or completed run exists.
+scoring; it refuses to run after any score row or completed run exists. The
+pre-score database integration check then exposed and corrected a column-count
+defect before the first score was written; the final amendment is chained to
+the earlier amendment rather than replacing it.

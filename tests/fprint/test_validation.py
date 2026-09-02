@@ -9,6 +9,7 @@ from pathlib import Path
 from fprint.core import lock_forecasts, verify_lock
 from fprint.validation import _condition_specs, _metrics, prepare_prospective_validation
 from fprint.validation_evaluate import evaluate_prospective_validation
+from fprint.validation_scoring import SCHEMA
 
 
 def _eligible_text(index):
@@ -22,6 +23,19 @@ def _eligible_text(index):
 
 
 class ProspectiveValidationTests(unittest.TestCase):
+    def test_score_schema_accepts_locked_row_shape(self):
+        connection = sqlite3.connect(":memory:")
+        connection.executescript(SCHEMA)
+        row = (
+            "endpoint", "condition", "current", "triplet", "probe", "original",
+            "endpoint", 0.1, 0.2, 10, 10, 512, 0, 1.0, None, "fp32", "{}",
+        )
+        connection.execute(
+            "INSERT INTO scores VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", row,
+        )
+        self.assertEqual(connection.execute("SELECT COUNT(*) FROM scores").fetchone()[0], 1)
+        connection.close()
+
     def test_metrics_and_opaque_conditions(self):
         rows = [
             {"truth_changed": False, "alarm_score": 0.0, "status": "unchanged"},

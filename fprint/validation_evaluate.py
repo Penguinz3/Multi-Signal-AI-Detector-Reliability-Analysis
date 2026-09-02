@@ -122,7 +122,7 @@ def _load_panel(root: Path, manifest: Mapping[str, object], manifest_digest: str
     panel_path = root / "panel.csv"
     expected_hash = panel_payload.get("panel_csv_sha256", panel_payload.get("panel_sha256"))
     if not expected_hash:
-        amendment = verify_lock(root / "scoring_integrity_amendment.lock.json")["payload"]
+        amendment = verify_lock(root / "scoring_integrity_amendment_v2.lock.json")["payload"]
         if amendment.get("construct") != "prospective_scoring_integrity_amendment":
             raise RuntimeError("Unsupported scoring integrity amendment")
         if amendment.get("manifest_sha256") != manifest_digest:

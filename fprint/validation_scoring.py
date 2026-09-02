@@ -39,7 +39,8 @@ SCHEMA_VERSION = 1
 RUN_LABELS = ("reference-a", "reference-b", "current")
 LEVELS = ("original", "low", "high")
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
-INTEGRITY_AMENDMENT = "scoring_integrity_amendment.lock.json"
+INTEGRITY_AMENDMENT = "scoring_integrity_amendment_v2.lock.json"
+PRIOR_INTEGRITY_AMENDMENT = "scoring_integrity_amendment.lock.json"
 
 
 SCHEMA = """
@@ -298,6 +299,8 @@ def lock_scoring_integrity_amendment(validation_root: Path) -> Path:
     manifest, manifest_sha = _lock(root / "manifest.lock.json")
     panel, panel_sha = _lock(root / "panel.lock.json")
     protocol, protocol_sha = _lock(root / "scoring_protocol.lock.json")
+    prior_path = root / PRIOR_INTEGRITY_AMENDMENT
+    prior_sha = verify_lock(prior_path)["sha256"] if prior_path.exists() else None
     panel_path = root / "panel.csv"
     with panel_path.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -327,6 +330,7 @@ def lock_scoring_integrity_amendment(validation_root: Path) -> Path:
         "construct": "prospective_scoring_integrity_amendment",
         "reason": "legacy_panel_lock_bound_ids_and_counts_but_not_panel_csv_bytes",
         "created_before_scores": True,
+        "parent_integrity_amendment_sha256": prior_sha,
         "manifest_sha256": manifest_sha,
         "panel_lock_sha256": panel_sha,
         "scoring_protocol_sha256": protocol_sha,
@@ -671,7 +675,7 @@ def score_validation_run(
                     })
                     with connection:
                         connection.execute(
-                            """INSERT INTO scores VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                            """INSERT INTO scores VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                             (
                                 endpoint, condition_code, run_label, triplet_id, triplet["probe"], level,
                                 effective_endpoint, native, canonical, base["input_token_count"],
@@ -720,7 +724,7 @@ def score_validation_run(
             for level, payload in payloads.items():
                 with connection:
                     connection.execute(
-                        """INSERT OR REPLACE INTO scores VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        """INSERT OR REPLACE INTO scores VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                         (
                             endpoint, condition_code, run_label, triplet_id, triplet["probe"], level,
                             effective_endpoint, payload.get("native_score"), payload.get("canonical_ai_score"),
