@@ -54,3 +54,24 @@ The prospective test keeps the 50-passage gate at:
 
 Passing the retrospective replay alone cannot remove the engineering-beta
 label. Only the prospective panel can supply that evidence.
+
+## Locked execution
+
+Prospective execution has three separate, fail-closed stages:
+
+1. `lock-operational-validation-scoring` binds the committed scoring and
+   evaluation code, the panel and private condition locks, the source score
+   database, and each endpoint's frozen human-reference empirical CDF before
+   new inference begins.
+2. `score-operational-validation` produces one resumable, hash-locked run for
+   an endpoint, opaque condition code, and run role. The unchanged condition
+   receives two independent reference reruns plus a current rerun; every other
+   condition receives only a current run and reuses those endpoint references.
+3. `evaluate-operational-validation` writes and hash-locks every blinded alarm
+   before opening the private condition truth, then publishes the prospective
+   metrics and success-gate decision.
+
+The audited baseline remains FP32. BF16 is intentionally one hidden precision
+change rather than a silent redefinition of the reference. Any missing score,
+failure, truncation, duplicate run, altered panel row, or mismatched lock stops
+the pipeline and prevents a completion artifact.

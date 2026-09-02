@@ -15,6 +15,8 @@ from .detectors import SPECS
 from .operational import compare_runs, export_challenge, import_run, initialize_audit
 from .product import build_release_bundle, export_contracts, write_evaluation_html
 from .validation import lock_prospective_panel, prepare_prospective_validation, replay_operational_validation
+from .validation_evaluate import evaluate_prospective_validation
+from .validation_scoring import lock_scoring_protocol_from_database, score_validation_run
 
 
 def prepare_conformance(args: argparse.Namespace) -> None:
@@ -106,6 +108,18 @@ def prepare_prospective(args: argparse.Namespace) -> None:
 
 def lock_panel(args: argparse.Namespace) -> None:
     print(f"Locked all-endpoint-valid prospective panel: {lock_prospective_panel(args.validation_root, args.mage_repo)}")
+
+
+def lock_scoring(args: argparse.Namespace) -> None:
+    print(f"Locked prospective scoring protocol: {lock_scoring_protocol_from_database(args.validation_root, args.reference_database)}")
+
+
+def score_prospective(args: argparse.Namespace) -> None:
+    print(f"Locked prospective score run: {score_validation_run(args.validation_root, args.endpoint, args.condition_code, args.run_label, device=args.device, mage_repo=args.mage_repo)}")
+
+
+def evaluate_prospective(args: argparse.Namespace) -> None:
+    print(f"Published prospective validation: {evaluate_prospective_validation(args.validation_root, args.output_dir)}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -216,6 +230,34 @@ def build_parser() -> argparse.ArgumentParser:
     panel.add_argument("--validation-root", type=Path, required=True)
     panel.add_argument("--mage-repo", type=Path, required=True)
     panel.set_defaults(func=lock_panel)
+
+    scoring_lock = sub.add_parser(
+        "lock-operational-validation-scoring",
+        help="Bind scoring code and frozen normalization before inference",
+    )
+    scoring_lock.add_argument("--validation-root", type=Path, required=True)
+    scoring_lock.add_argument("--reference-database", type=Path, required=True)
+    scoring_lock.set_defaults(func=lock_scoring)
+
+    validation_score = sub.add_parser(
+        "score-operational-validation",
+        help="Resume one opaque prospective endpoint condition",
+    )
+    validation_score.add_argument("--validation-root", type=Path, required=True)
+    validation_score.add_argument("--endpoint", required=True)
+    validation_score.add_argument("--condition-code", required=True)
+    validation_score.add_argument("--run-label", choices=("reference-a", "reference-b", "current"), required=True)
+    validation_score.add_argument("--device", type=int, default=0)
+    validation_score.add_argument("--mage-repo", type=Path)
+    validation_score.set_defaults(func=score_prospective)
+
+    validation_evaluate = sub.add_parser(
+        "evaluate-operational-validation",
+        help="Lock blinded reports before unblinding prospective metrics",
+    )
+    validation_evaluate.add_argument("--validation-root", type=Path, required=True)
+    validation_evaluate.add_argument("--output-dir", type=Path)
+    validation_evaluate.set_defaults(func=evaluate_prospective)
     return parser
 
 

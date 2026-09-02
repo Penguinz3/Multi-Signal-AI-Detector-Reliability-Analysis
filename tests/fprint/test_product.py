@@ -51,6 +51,8 @@ class ProductContractTests(unittest.TestCase):
             "init-audit", "export-challenge", "import-run", "compare-runs",
             "replay-operational-validation", "prepare-operational-validation",
             "lock-operational-validation-panel",
+            "lock-operational-validation-scoring", "score-operational-validation",
+            "evaluate-operational-validation",
         })
 
     def test_contract_bundle_has_stable_template(self):

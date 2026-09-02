@@ -245,7 +245,8 @@ def prepare_prospective_validation(
 def lock_prospective_panel(validation_root: Path, mage_repo: Path) -> Path:
     """Token-validate every triplet first, then lock the first 50 valid groups per cell."""
     root = Path(validation_root).resolve()
-    manifest = verify_lock(root / "manifest.lock.json")["payload"]
+    manifest_envelope = verify_lock(root / "manifest.lock.json")
+    manifest = manifest_envelope["payload"]
     if (root / "panel.lock.json").exists():
         verify_lock(root / "panel.lock.json")
         return root / "panel.lock.json"
@@ -260,6 +261,13 @@ def lock_prospective_panel(validation_root: Path, mage_repo: Path) -> Path:
     }
     with (root / "candidates.csv").open(encoding="utf-8-sig", newline="") as handle:
         candidates = list(csv.DictReader(handle))
+    if _file_sha256(root / "candidates.csv") != manifest["candidate_table_sha256"]:
+        raise RuntimeError("Candidate table disagrees with the locked manifest")
+    if any(_digest([
+        row["original_text"], row["low_text"], row["high_text"],
+        float(row["low_intensity"]), float(row["high_intensity"]),
+    ]) != row["triplet_sha256"] for row in candidates):
+        raise RuntimeError("Candidate triplet content hash mismatch")
     selected, rejected = [], []
     for corpus in manifest["corpora"]:
         for probe in manifest["probes"]:
@@ -306,6 +314,8 @@ def lock_prospective_panel(validation_root: Path, mage_repo: Path) -> Path:
     lock_forecasts(root / "panel.lock.json", {
         "schema_version": 1,
         "parent_manifest_sha256": _file_sha256(root / "manifest.lock.json"),
+        "parent_manifest_payload_sha256": manifest_envelope["sha256"],
+        "candidate_table_sha256": manifest["candidate_table_sha256"],
         "selection_rule": "first_50_frozen_hash_order_candidates_valid_for_every_endpoint_tokenizer",
         "rows": len(selected), "groups": len({row["group_id"] for row in selected}),
         "rows_per_corpus_probe": {
@@ -313,6 +323,7 @@ def lock_prospective_panel(validation_root: Path, mage_repo: Path) -> Path:
             for corpus in manifest["corpora"] for probe in manifest["probes"]
         },
         "capacity_exclusions_sha256": _file_sha256(rejection_path),
+        "panel_csv_sha256": _file_sha256(panel_path),
         "triplet_ids": [row["triplet_id"] for row in selected],
     })
     return root / "panel.lock.json"
