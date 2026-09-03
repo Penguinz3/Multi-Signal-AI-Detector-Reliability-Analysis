@@ -17,6 +17,7 @@ from .product import build_release_bundle, export_contracts, write_evaluation_ht
 from .validation import lock_prospective_panel, prepare_prospective_validation, replay_operational_validation
 from .validation_evaluate import evaluate_prospective_validation
 from .validation_scoring import (
+    lock_execution_integrity_patch,
     lock_scoring_integrity_amendment,
     lock_scoring_protocol_from_database,
     score_validation_run,
@@ -124,6 +125,10 @@ def score_prospective(args: argparse.Namespace) -> None:
 
 def amend_scoring_integrity(args: argparse.Namespace) -> None:
     print(f"Locked pre-score integrity amendment: {lock_scoring_integrity_amendment(args.validation_root)}")
+
+
+def patch_scoring_execution(args: argparse.Namespace) -> None:
+    print(f"Locked score-preserving execution patch: {lock_execution_integrity_patch(args.validation_root)}")
 
 
 def evaluate_prospective(args: argparse.Namespace) -> None:
@@ -253,6 +258,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     scoring_amendment.add_argument("--validation-root", type=Path, required=True)
     scoring_amendment.set_defaults(func=amend_scoring_integrity)
+
+    execution_patch = sub.add_parser(
+        "lock-operational-validation-execution-patch",
+        help="Bind score-preserving collection guard fixes before unblinding",
+    )
+    execution_patch.add_argument("--validation-root", type=Path, required=True)
+    execution_patch.set_defaults(func=patch_scoring_execution)
 
     validation_score = sub.add_parser(
         "score-operational-validation",

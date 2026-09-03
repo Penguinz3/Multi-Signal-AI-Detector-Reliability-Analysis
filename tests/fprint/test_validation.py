@@ -10,6 +10,7 @@ from fprint.core import lock_forecasts, verify_lock
 from fprint.validation import _condition_specs, _metrics, prepare_prospective_validation
 from fprint.validation_evaluate import evaluate_prospective_validation
 from fprint.validation_scoring import SCHEMA
+import fprint.validation_evaluate as validation_evaluate_module
 
 
 def _eligible_text(index):
@@ -117,7 +118,7 @@ class ProspectiveValidationTests(unittest.TestCase):
             }
             manifest_digest = lock_forecasts(root / "manifest.lock.json", manifest)
             file_digest = hashlib.sha256((root / "manifest.lock.json").read_bytes()).hexdigest()
-            lock_forecasts(root / "panel.lock.json", {
+            panel_digest = lock_forecasts(root / "panel.lock.json", {
                 "parent_manifest_sha256": file_digest, "rows": len(panel),
                 "triplet_ids": [row["triplet_id"] for row in panel],
                 "panel_sha256": hashlib.sha256(panel_path.read_bytes()).hexdigest(),
@@ -129,22 +130,42 @@ class ProspectiveValidationTests(unittest.TestCase):
                     {"condition_code": "changed", "endpoint": "endpoint", "family": "input_handling", "mode": "test"},
                 ],
             })
-            (root / "runs").mkdir()
+            protocol_digest = lock_forecasts(root / "scoring_protocol.lock.json", {
+                "construct": "prospective_validation_scoring_protocol",
+            })
+            amendment_digest = lock_forecasts(root / "scoring_integrity_amendment_v2.lock.json", {
+                "construct": "prospective_scoring_integrity_amendment",
+            })
+            code_dir = Path(validation_evaluate_module.__file__).resolve().parent
+            code_files = (
+                code_dir / "validation_evaluate.py", code_dir / "validation_scoring.py",
+                code_dir / "validation.py", code_dir / "operational.py",
+                code_dir / "detectors.py", code_dir / "core.py",
+            )
+            lock_forecasts(root / "execution_integrity_patch.lock.json", {
+                "construct": "prospective_score_preserving_execution_patch",
+                "manifest_sha256": manifest_digest, "panel_lock_sha256": panel_digest,
+                "scoring_protocol_sha256": protocol_digest,
+                "parent_integrity_amendment_sha256": amendment_digest,
+                "score_math_unchanged": True, "completed_run_lock_files_sha256": {},
+                "code_sha256": {
+                    path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in code_files
+                },
+            })
             ids = [f"{row['triplet_id']}:{level}" for row in panel for level in ("original", "low", "high")]
             base = {challenge_id: .2 + (index % 5) * .01 for index, challenge_id in enumerate(ids)}
             changed = dict(base)
             for challenge_id in ids:
                 if challenge_id.startswith("paragraph_resegmentation") and not challenge_id.endswith(":original"):
                     changed[challenge_id] += .3
-            for code, role, scores in (
-                ("base", "reference_a", base), ("base", "reference_b", base),
-                ("base", "current", base), ("changed", "current", changed),
-            ):
-                lock_forecasts(root / "runs" / f"{code}-{role}.lock.json", {
-                    "construct": "prospective_validation_score_run", "manifest_sha256": manifest_digest,
-                    "endpoint": "endpoint", "condition_code": code, "role": role,
-                    "scores": scores, "metadata": {"threshold_policy": "unchanged"},
-                })
+            lock_forecasts(root / "score_state.lock.json", {
+                "construct": "prospective_score_state", "manifest_sha256": manifest_digest,
+                "conditions": [
+                    {"endpoint": "endpoint", "condition_code": "base",
+                     "reference_a": base, "reference_b": base, "current": base},
+                    {"endpoint": "endpoint", "condition_code": "changed", "current": changed},
+                ],
+            })
             output = evaluate_prospective_validation(root, root / "results")
             report = json.loads((output / "validation_metrics.json").read_text(encoding="utf-8"))
             self.assertTrue((output / "blinded_predictions.lock.json").is_file())

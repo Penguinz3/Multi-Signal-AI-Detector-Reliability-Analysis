@@ -84,3 +84,10 @@ scoring; it refuses to run after any score row or completed run exists. The
 pre-score database integration check then exposed and corrected a column-count
 defect before the first score was written; the final amendment is chained to
 the earlier amendment rather than replacing it.
+
+After unchanged, input, precision, and threshold-control RADAR runs were
+locked, the first offline-calibration preflight found that the text router did
+not classify `logit_bias` as an identity transform. It failed before writing a
+calibration row. A score-preserving execution patch records the exact pre-patch
+rows and completed-run hashes, adds that routing case plus stricter code/run
+provenance checks, and is locked before collection resumes or truth is opened.

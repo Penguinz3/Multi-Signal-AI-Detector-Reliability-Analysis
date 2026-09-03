@@ -41,6 +41,7 @@ LEVELS = ("original", "low", "high")
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 INTEGRITY_AMENDMENT = "scoring_integrity_amendment_v2.lock.json"
 PRIOR_INTEGRITY_AMENDMENT = "scoring_integrity_amendment.lock.json"
+EXECUTION_PATCH = "execution_integrity_patch.lock.json"
 
 
 SCHEMA = """
@@ -91,6 +92,23 @@ def _file_sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _code_files() -> tuple[Path, ...]:
+    return (
+        Path(__file__), Path(__file__).with_name("validation_evaluate.py"),
+        Path(__file__).with_name("validation.py"), Path(__file__).with_name("operational.py"),
+        Path(__file__).with_name("detectors.py"), Path(__file__).with_name("core.py"),
+    )
+
+
+def _verify_code_hashes(payload: Mapping[str, object], label: str) -> None:
+    expected = payload.get("code_sha256")
+    if not isinstance(expected, Mapping):
+        raise RuntimeError(f"{label} lacks frozen code hashes")
+    actual = {path.name: _file_sha256(path) for path in _code_files()}
+    if {str(key): str(value) for key, value in expected.items()} != actual:
+        raise RuntimeError(f"{label} code hashes no longer match the scoring implementation")
 
 
 def _digest(value: object) -> str:
@@ -144,6 +162,33 @@ def _panel_csv_hash(
     return str(expected), amendment_sha
 
 
+def _verify_execution_code(
+    root: Path, amendment_sha: str | None, manifest_sha: str,
+    panel_sha: str, protocol_sha: str,
+) -> str | None:
+    if amendment_sha is None:
+        return None
+    patch_path = root / EXECUTION_PATCH
+    if not patch_path.exists():
+        amendment = verify_lock(root / INTEGRITY_AMENDMENT)["payload"]
+        _verify_code_hashes(amendment, "Integrity amendment")
+        return None
+    patch, patch_sha = _lock(patch_path)
+    if patch.get("construct") != "prospective_score_preserving_execution_patch":
+        raise RuntimeError("Unsupported execution integrity patch")
+    for field, expected in (
+        ("manifest_sha256", manifest_sha), ("panel_lock_sha256", panel_sha),
+        ("scoring_protocol_sha256", protocol_sha),
+        ("parent_integrity_amendment_sha256", amendment_sha),
+    ):
+        if patch.get(field) != expected:
+            raise RuntimeError("Execution integrity patch belongs to another validation state")
+    if patch.get("score_math_unchanged") is not True:
+        raise RuntimeError("Execution patch is not declared score preserving")
+    _verify_code_hashes(patch, "Execution integrity patch")
+    return patch_sha
+
+
 def _load_context(validation_root: Path, protocol_lock: Path) -> tuple[Path, dict, str, list[dict], dict, str, dict, str, dict, str]:
     root = Path(validation_root).resolve()
     manifest_path, panel_path, truth_path = (
@@ -175,6 +220,9 @@ def _load_context(validation_root: Path, protocol_lock: Path) -> tuple[Path, dic
     if amendment_sha:
         protocol = dict(protocol)
         protocol["integrity_amendment_sha256"] = amendment_sha
+        protocol["execution_patch_sha256"] = _verify_execution_code(
+            root, amendment_sha, manifest_sha, panel_sha, protocol_sha,
+        )
     with panel_csv.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
     required = {"triplet_id", "probe", "original_text", "low_text", "high_text", "low_intensity", "high_intensity"}
@@ -258,16 +306,11 @@ def lock_scoring_protocol_from_database(validation_root: Path, reference_databas
     commit = subprocess.run(
         ["git", "-C", str(repo), "rev-parse", "HEAD"], check=True, capture_output=True, text=True,
     ).stdout.strip()
-    code_files = (
-        Path(__file__), Path(__file__).with_name("validation_evaluate.py"),
-        Path(__file__).with_name("validation.py"), Path(__file__).with_name("operational.py"),
-        Path(__file__).with_name("detectors.py"), Path(__file__).with_name("core.py"),
-    )
     return lock_scoring_protocol(
         validation_root,
         {
             "code_commit": commit,
-            "code_sha256": {path.name: _file_sha256(path) for path in code_files},
+            "code_sha256": {path.name: _file_sha256(path) for path in _code_files()},
             "reference_database": str(reference_database),
             "reference_database_sha256": _file_sha256(reference_database),
             "normalization": "frozen_human_reference_empirical_cdf",
@@ -320,11 +363,6 @@ def lock_scoring_integrity_amendment(validation_root: Path) -> Path:
         ["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
         capture_output=True, text=True,
     ).stdout.strip()
-    code_files = (
-        Path(__file__), Path(__file__).with_name("validation_evaluate.py"),
-        Path(__file__).with_name("validation.py"), Path(__file__).with_name("operational.py"),
-        Path(__file__).with_name("detectors.py"), Path(__file__).with_name("core.py"),
-    )
     lock_forecasts(target, {
         "schema_version": SCHEMA_VERSION,
         "construct": "prospective_scoring_integrity_amendment",
@@ -338,7 +376,69 @@ def lock_scoring_integrity_amendment(validation_root: Path) -> Path:
         "rows": len(rows),
         "triplet_ids_sha256": _digest(locked_ids),
         "code_commit": commit,
-        "code_sha256": {path.name: _file_sha256(path) for path in code_files},
+        "code_sha256": {path.name: _file_sha256(path) for path in _code_files()},
+    })
+    return target
+
+
+def lock_execution_integrity_patch(validation_root: Path) -> Path:
+    """Bind score-preserving guard fixes after collection began but before unblinding."""
+    root = Path(validation_root).resolve()
+    target = root / EXECUTION_PATCH
+    if target.exists():
+        verify_lock(target)
+        return target
+    if (root / "results").exists():
+        raise RuntimeError("Execution patch must be locked before prospective evaluation")
+    manifest, manifest_sha = _lock(root / "manifest.lock.json")
+    panel, panel_sha = _lock(root / "panel.lock.json")
+    protocol, protocol_sha = _lock(root / "scoring_protocol.lock.json")
+    amendment, amendment_sha = _lock(root / INTEGRITY_AMENDMENT)
+    if amendment.get("panel_csv_sha256") != _file_sha256(root / "panel.csv"):
+        raise RuntimeError("Panel bytes changed after the integrity amendment")
+    run_locks = {}
+    for path in sorted((root / "runs").glob("*.lock.json")):
+        payload = verify_lock(path)["payload"]
+        if payload.get("construct") != "prospective_validation_score_run" or payload.get("completion") != "complete":
+            raise RuntimeError("Only complete score runs may precede the execution patch")
+        run_locks[path.name] = _file_sha256(path)
+    database = root / "validation_scores.sqlite3"
+    rows: list[tuple] = []
+    if database.exists():
+        connection = sqlite3.connect(database)
+        try:
+            rows = connection.execute(
+                """SELECT endpoint,condition_code,run_label,triplet_id,intensity,
+                          native_score,canonical_ai_score,truncated,failure
+                   FROM scores ORDER BY endpoint,condition_code,run_label,triplet_id,intensity"""
+            ).fetchall()
+        finally:
+            connection.close()
+    repo = Path(__file__).resolve().parents[1]
+    commit = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    lock_forecasts(target, {
+        "schema_version": SCHEMA_VERSION,
+        "construct": "prospective_score_preserving_execution_patch",
+        "created_before_unblinding": True,
+        "score_math_unchanged": True,
+        "changes": [
+            "route_offline_calibration_without_text_transformation",
+            "verify_frozen_code_before_inference",
+            "validate_existing_completion_locks",
+            "validate_score_run_provenance_before_evaluation",
+        ],
+        "manifest_sha256": manifest_sha,
+        "panel_lock_sha256": panel_sha,
+        "scoring_protocol_sha256": protocol_sha,
+        "parent_integrity_amendment_sha256": amendment_sha,
+        "completed_run_lock_files_sha256": run_locks,
+        "pre_patch_score_rows": len(rows),
+        "pre_patch_score_rows_sha256": _digest(rows),
+        "code_commit": commit,
+        "code_sha256": {path.name: _file_sha256(path) for path in _code_files()},
     })
     return target
 
@@ -414,7 +514,11 @@ def _empirical_cdf(reference: Sequence[float], value: float) -> float:
 
 
 def _transform_input(mode: str, text: str) -> str:
-    if mode in {"identity", "bf16", "unchanged", "threshold_only", "endpoint_replacement", "mean_logprob", "lastde"}:
+    if mode in {
+        "identity", "bf16", "unchanged", "threshold_only", "endpoint_replacement",
+        "mean_logprob", "lastde", "logit_bias", "score_recalibration",
+        "monotone_recalibration", "temperature", "temperature_remap",
+    }:
         return text
     if mode == "newline_flatten":
         return re.sub(r"[ \t]*\r?\n+[ \t]*", " ", text).strip()
@@ -539,13 +643,39 @@ def _write_score_csv(path: Path, rows: Sequence[sqlite3.Row]) -> None:
         temp.unlink(missing_ok=True)
 
 
-def _existing_lock(root: Path, stem: str, endpoint: str, condition_code: str, run_label: str) -> Path | None:
+def _existing_lock(
+    root: Path, stem: str, endpoint: str, condition_code: str, run_label: str,
+    expected_ids: set[str], manifest_sha: str, panel_sha: str,
+    protocol_sha: str, amendment_sha: str | None,
+) -> Path | None:
     path = root / "runs" / f"{stem}.lock.json"
     if not path.exists():
         return None
     payload, _ = _lock(path)
     if (payload.get("endpoint"), payload.get("condition_code"), payload.get("run_label")) != (endpoint, condition_code, run_label):
         raise RuntimeError("Existing run lock has a conflicting identity")
+    expected_rows = len(expected_ids) * len(LEVELS)
+    scores = payload.get("scores")
+    expected_challenges = {f"{triplet_id}:{level}" for triplet_id in expected_ids for level in LEVELS}
+    if (
+        payload.get("construct") != "prospective_validation_score_run"
+        or payload.get("completion") != "complete"
+        or int(payload.get("expected_triplets", -1)) != len(expected_ids)
+        or int(payload.get("score_rows", -1)) != expected_rows
+        or int(payload.get("valid_rows", -1)) != expected_rows
+        or int(payload.get("rejected_triplets", -1)) != 0
+        or not isinstance(scores, Mapping)
+        or set(map(str, scores)) != expected_challenges
+        or payload.get("manifest_sha256") != manifest_sha
+        or payload.get("panel_sha256") != panel_sha
+        or payload.get("scoring_protocol_sha256") != protocol_sha
+        or (amendment_sha and payload.get("integrity_amendment_sha256") != amendment_sha)
+    ):
+        raise RuntimeError("Existing run lock is incomplete or has invalid provenance")
+    table_name = str(payload.get("score_table_path", ""))
+    table_path = root / "runs" / table_name
+    if Path(table_name).name != table_name or not table_path.exists() or _file_sha256(table_path) != payload.get("score_table_sha256"):
+        raise RuntimeError("Existing run score table is missing or altered")
     return path
 
 
@@ -588,7 +718,11 @@ def score_validation_run(
     stem = _run_stem(endpoint, condition_code, run_label)
     runs = root / "runs"
     runs.mkdir(parents=True, exist_ok=True)
-    existing = _existing_lock(root, stem, endpoint, condition_code, run_label)
+    existing = _existing_lock(
+        root, stem, endpoint, condition_code, run_label, set(expected_triplets),
+        manifest_sha, panel_sha, protocol_sha,
+        str(protocol.get("integrity_amendment_sha256")) if protocol.get("integrity_amendment_sha256") else None,
+    )
     if existing:
         return existing
     db_path = Path(database or (root / "validation_scores.sqlite3")).resolve()
@@ -772,6 +906,7 @@ def score_validation_run(
         "truth_sha256": truth_sha,
         "scoring_protocol_sha256": protocol_sha,
         "integrity_amendment_sha256": protocol.get("integrity_amendment_sha256"),
+        "execution_patch_sha256": protocol.get("execution_patch_sha256"),
         "endpoint": endpoint,
         "condition_code": condition_code,
         "run_label": run_label,

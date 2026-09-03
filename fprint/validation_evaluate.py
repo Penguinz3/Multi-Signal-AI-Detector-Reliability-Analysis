@@ -282,6 +282,32 @@ def _collect_runs(
 
 def _load_score_state(root: Path, manifest: Mapping[str, object], manifest_digest: str, expected_ids: set[str]) -> tuple[dict[str, dict[str, dict[str, object]]], list[str]]:
     public = _public_conditions(manifest)
+    panel_sha = verify_lock(root / "panel.lock.json")["sha256"]
+    protocol_sha = verify_lock(root / "scoring_protocol.lock.json")["sha256"]
+    amendment_sha = verify_lock(root / "scoring_integrity_amendment_v2.lock.json")["sha256"]
+    patch_envelope = verify_lock(root / "execution_integrity_patch.lock.json")
+    patch = patch_envelope["payload"]
+    if (
+        patch.get("construct") != "prospective_score_preserving_execution_patch"
+        or patch.get("manifest_sha256") != manifest_digest
+        or patch.get("panel_lock_sha256") != panel_sha
+        or patch.get("scoring_protocol_sha256") != protocol_sha
+        or patch.get("parent_integrity_amendment_sha256") != amendment_sha
+        or patch.get("score_math_unchanged") is not True
+    ):
+        raise RuntimeError("Execution integrity patch does not match the prospective state")
+    code_dir = Path(__file__).resolve().parent
+    code_files = (
+        Path(__file__), code_dir / "validation_scoring.py", code_dir / "validation.py",
+        code_dir / "operational.py", code_dir / "detectors.py", code_dir / "core.py",
+    )
+    expected_code = patch.get("code_sha256")
+    actual_code = {path.name: _sha256(path) for path in code_files}
+    if not isinstance(expected_code, Mapping) or dict(expected_code) != actual_code:
+        raise RuntimeError("Evaluator code no longer matches the execution integrity patch")
+    pre_patch_locks = patch.get("completed_run_lock_files_sha256", {})
+    if not isinstance(pre_patch_locks, Mapping):
+        raise RuntimeError("Execution patch lacks its pre-patch run inventory")
     candidates = [root / name for name in ("score_state.lock.json", "scoring_state.lock.json", "scores.lock.json")]
     candidates.extend(
         path for path in sorted(root.rglob("*.lock.json"))
@@ -299,6 +325,29 @@ def _load_score_state(root: Path, manifest: Mapping[str, object], manifest_diges
             continue
         construct = str(payload.get("construct", ""))
         if path.name not in {"score_state.lock.json", "scoring_state.lock.json", "scores.lock.json"} and "score" not in construct and "run" not in construct:
+            continue
+        if construct == "prospective_validation_score_run":
+            expected_rows = len(expected_ids)
+            if (
+                payload.get("completion") != "complete"
+                or int(payload.get("score_rows", -1)) != expected_rows
+                or int(payload.get("valid_rows", -1)) != expected_rows
+                or int(payload.get("rejected_triplets", -1)) != 0
+                or payload.get("manifest_sha256") != manifest_digest
+                or payload.get("panel_sha256") != panel_sha
+                or payload.get("scoring_protocol_sha256") != protocol_sha
+                or payload.get("integrity_amendment_sha256") != amendment_sha
+            ):
+                raise RuntimeError(f"Incomplete or unbound prospective score run: {path}")
+            table_name = str(payload.get("score_table_path", ""))
+            table_path = path.parent / table_name
+            if Path(table_name).name != table_name or not table_path.exists() or _sha256(table_path) != payload.get("score_table_sha256"):
+                raise RuntimeError(f"Prospective score table is missing or altered: {path}")
+            pre_patch = pre_patch_locks.get(path.name) == _sha256(path)
+            post_patch = payload.get("execution_patch_sha256") == patch_envelope["sha256"]
+            if not (pre_patch or post_patch):
+                raise RuntimeError(f"Prospective run is not covered by the execution patch: {path}")
+        elif path.name not in {"score_state.lock.json", "scoring_state.lock.json", "scores.lock.json"}:
             continue
         if payload.get("manifest_sha256") not in (None, manifest_digest) and payload.get("parent_manifest_sha256") not in (None, manifest_digest):
             raise RuntimeError(f"Score state belongs to another prospective manifest: {path}")

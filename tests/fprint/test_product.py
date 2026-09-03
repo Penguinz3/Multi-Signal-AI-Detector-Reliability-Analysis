@@ -54,6 +54,7 @@ class ProductContractTests(unittest.TestCase):
             "lock-operational-validation-scoring", "score-operational-validation",
             "evaluate-operational-validation",
             "lock-operational-validation-integrity-amendment",
+            "lock-operational-validation-execution-patch",
         })
 
     def test_contract_bundle_has_stable_template(self):
