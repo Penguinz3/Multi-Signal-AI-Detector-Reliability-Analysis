@@ -285,7 +285,7 @@ def _load_score_state(root: Path, manifest: Mapping[str, object], manifest_diges
     panel_sha = verify_lock(root / "panel.lock.json")["sha256"]
     protocol_sha = verify_lock(root / "scoring_protocol.lock.json")["sha256"]
     amendment_sha = verify_lock(root / "scoring_integrity_amendment_v2.lock.json")["sha256"]
-    patch_envelope = verify_lock(root / "execution_integrity_patch.lock.json")
+    patch_envelope = verify_lock(root / "execution_integrity_patch_v2.lock.json")
     patch = patch_envelope["payload"]
     if (
         patch.get("construct") != "prospective_score_preserving_execution_patch"

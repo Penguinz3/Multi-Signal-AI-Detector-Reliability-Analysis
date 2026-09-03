@@ -91,3 +91,5 @@ not classify `logit_bias` as an identity transform. It failed before writing a
 calibration row. A score-preserving execution patch records the exact pre-patch
 rows and completed-run hashes, adds that routing case plus stricter code/run
 provenance checks, and is locked before collection resumes or truth is opened.
+An initialization-order defect in that new existing-lock guard was also caught
+before output and corrected in a second chained execution patch.

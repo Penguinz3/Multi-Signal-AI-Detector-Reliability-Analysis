@@ -41,7 +41,8 @@ LEVELS = ("original", "low", "high")
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 INTEGRITY_AMENDMENT = "scoring_integrity_amendment_v2.lock.json"
 PRIOR_INTEGRITY_AMENDMENT = "scoring_integrity_amendment.lock.json"
-EXECUTION_PATCH = "execution_integrity_patch.lock.json"
+EXECUTION_PATCH = "execution_integrity_patch_v2.lock.json"
+PRIOR_EXECUTION_PATCH = "execution_integrity_patch.lock.json"
 
 
 SCHEMA = """
@@ -394,6 +395,8 @@ def lock_execution_integrity_patch(validation_root: Path) -> Path:
     panel, panel_sha = _lock(root / "panel.lock.json")
     protocol, protocol_sha = _lock(root / "scoring_protocol.lock.json")
     amendment, amendment_sha = _lock(root / INTEGRITY_AMENDMENT)
+    prior_path = root / PRIOR_EXECUTION_PATCH
+    prior_patch_sha = verify_lock(prior_path)["sha256"] if prior_path.exists() else None
     if amendment.get("panel_csv_sha256") != _file_sha256(root / "panel.csv"):
         raise RuntimeError("Panel bytes changed after the integrity amendment")
     run_locks = {}
@@ -434,6 +437,7 @@ def lock_execution_integrity_patch(validation_root: Path) -> Path:
         "panel_lock_sha256": panel_sha,
         "scoring_protocol_sha256": protocol_sha,
         "parent_integrity_amendment_sha256": amendment_sha,
+        "parent_execution_patch_sha256": prior_patch_sha,
         "completed_run_lock_files_sha256": run_locks,
         "pre_patch_score_rows": len(rows),
         "pre_patch_score_rows_sha256": _digest(rows),
@@ -718,6 +722,7 @@ def score_validation_run(
     stem = _run_stem(endpoint, condition_code, run_label)
     runs = root / "runs"
     runs.mkdir(parents=True, exist_ok=True)
+    expected_triplets = {str(row["triplet_id"]): row for row in panel_rows}
     existing = _existing_lock(
         root, stem, endpoint, condition_code, run_label, set(expected_triplets),
         manifest_sha, panel_sha, protocol_sha,
@@ -727,7 +732,6 @@ def score_validation_run(
         return existing
     db_path = Path(database or (root / "validation_scores.sqlite3")).resolve()
     connection = _open_database(db_path)
-    expected_triplets = {str(row["triplet_id"]): row for row in panel_rows}
     run_key = (endpoint, condition_code, run_label)
     condition_mode = str(condition.get("mode", "identity"))
     parameters = condition.get("parameters", {})

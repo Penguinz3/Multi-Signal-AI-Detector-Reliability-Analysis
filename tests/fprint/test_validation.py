@@ -142,7 +142,7 @@ class ProspectiveValidationTests(unittest.TestCase):
                 code_dir / "validation.py", code_dir / "operational.py",
                 code_dir / "detectors.py", code_dir / "core.py",
             )
-            lock_forecasts(root / "execution_integrity_patch.lock.json", {
+            lock_forecasts(root / "execution_integrity_patch_v2.lock.json", {
                 "construct": "prospective_score_preserving_execution_patch",
                 "manifest_sha256": manifest_digest, "panel_lock_sha256": panel_digest,
                 "scoring_protocol_sha256": protocol_digest,
